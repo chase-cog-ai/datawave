@@ -80,7 +80,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.atom.tableName:add(value=${table.name.atom.categories})
 /system-property=dw.atom.externalHostName:add(value=${atom.wildfly.hostname})
 /system-property=dw.atom.externalPort:add(value=${atom.wildfly.port.number})
-/system-property=dw.atom.connectionPoolName:add(value=${atom.connection.pool.name}) 
+/system-property=dw.atom.connectionPoolName:add(value=${atom.connection.pool.name})
 /system-property=dw.metrics.reporter.host:add(value=${metrics.reporter.host})
 /system-property=dw.metrics.reporter.port:add(value=${metrics.reporter.port})
 /system-property=dw.metrics.reporter.class:add(value=${metrics.reporter.class})
@@ -88,6 +88,13 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.cache.reloadInterval:add(value="${cache.reloadInterval}")
 /system-property=dw.model.defaultTableName:add(value=${table.name.metadata})
 /system-property=dw.basemaps:add(value="${basemaps}")
+
+/system-property=dw.ssl.context.info.keyStoreURL:add(value=file://${KEYSTORE})
+/system-property=dw.ssl.context.info.keyStoreType:add(value="${KEYSTORE_TYPE}")
+/system-property=dw.ssl.context.info.keyStorePassword:add(value="${KEYSTORE_PASSWORD}")
+/system-property=dw.ssl.context.info.trustStoreURL:add(value=file://${TRUSTSTORE})
+/system-property=dw.ssl.context.info.trustStoreType:add(value="${TRUSTSTORE_TYPE}")
+/system-property=dw.ssl.context.info.trustStorePassword:add(value="${TRUSTSTORE_PASSWORD}")
 
 # proxied entities to be pruned from credentials
 /system-property=dw.trusted.proxied.entities:add(value="${trusted.proxied.entities}")

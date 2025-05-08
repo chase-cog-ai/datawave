@@ -27,7 +27,6 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.io.IOUtils;
-import org.jboss.security.JSSESecurityDomain;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,6 +51,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 import datawave.microservice.query.Query;
+import datawave.security.SSLContextInfo;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.ProxiedUserDetails;
@@ -62,7 +62,7 @@ import datawave.user.AuthorizationsListBase;
 import datawave.user.DefaultAuthorizationsList;
 import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.common.json.ObjectMapperDecorator;
-import datawave.webservice.common.remote.TestJSSESecurityDomain;
+import datawave.webservice.common.remote.TestSSLContextInfo;
 import datawave.webservice.dictionary.data.DataDictionaryBase;
 import datawave.webservice.dictionary.data.DescriptionBase;
 import datawave.webservice.dictionary.data.FieldsBase;
@@ -112,7 +112,7 @@ public class RemoteUserOperationsImplHttpTest {
         }
 
         @Bean
-        public JSSESecurityDomain jsseSecurityDomain() throws CertificateException, NoSuchAlgorithmException {
+        public SSLContextInfo sslContextInfo() throws CertificateException, NoSuchAlgorithmException {
             String alias = "tomcat";
             char[] keyPass = "changeit".toCharArray();
             int keysize = 2048;
@@ -131,7 +131,7 @@ public class RemoteUserOperationsImplHttpTest {
                             .setSigningKey(keypair.getPrivate()).setSignatureAlgorithmName("SHA256withRSA");
             chain[0] = builder.build();
 
-            return new TestJSSESecurityDomain(alias, privKey, keyPass, chain);
+            return new TestSSLContextInfo(alias, privKey, keyPass, chain);
         }
 
         @Bean

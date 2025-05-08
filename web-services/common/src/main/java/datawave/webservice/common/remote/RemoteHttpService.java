@@ -54,7 +54,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
-import org.jboss.security.JSSESecurityDomain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xbill.DNS.DClass;
@@ -71,6 +70,7 @@ import com.spotify.dns.DnsSrvResolver;
 import com.spotify.dns.DnsSrvResolvers;
 import com.spotify.dns.LookupResult;
 
+import datawave.security.SSLContextInfo;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.JWTTokenHandler;
@@ -96,7 +96,7 @@ public abstract class RemoteHttpService {
     private AtomicInteger activeExecutions = new AtomicInteger(0);
 
     @Inject
-    private JSSESecurityDomain jsseSecurityDomain;
+    private SSLContextInfo sslContextInfo;
 
     @Resource
     private ManagedExecutorService executorService;
@@ -110,8 +110,8 @@ public abstract class RemoteHttpService {
 
     private RemoteHttpServiceConfiguration config = new RemoteHttpServiceConfiguration();
 
-    public void setJsseSecurityDomain(JSSESecurityDomain jsseSecurityDomain) {
-        this.jsseSecurityDomain = jsseSecurityDomain;
+    public void setSslContextInfo(SSLContextInfo sslContextInfo) {
+        this.sslContextInfo = sslContextInfo;
     }
 
     public void setExecutorService(ManagedExecutorService executorService) {
@@ -163,10 +163,10 @@ public abstract class RemoteHttpService {
 
         try {
             SSLContext ctx = SSLContext.getInstance("TLSv1.2");
-            ctx.init(jsseSecurityDomain.getKeyManagers(), jsseSecurityDomain.getTrustManagers(), null);
+            ctx.init(sslContextInfo.getKeyManagers(), sslContextInfo.getTrustManagers(), null);
 
-            String alias = jsseSecurityDomain.getKeyStore().aliases().nextElement();
-            X509KeyManager keyManager = (X509KeyManager) jsseSecurityDomain.getKeyManagers()[0];
+            String alias = sslContextInfo.getKeyStore().aliases().nextElement();
+            X509KeyManager keyManager = (X509KeyManager) sslContextInfo.getKeyManagers()[0];
             X509Certificate[] certs = keyManager.getCertificateChain(alias);
             Key signingKey = keyManager.getPrivateKey(alias);
 

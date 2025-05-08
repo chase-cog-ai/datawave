@@ -3,27 +3,24 @@ package datawave.webservice.common.remote;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.Socket;
-import java.security.Key;
 import java.security.KeyStore;
 import java.security.Principal;
 import java.security.PrivateKey;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.Properties;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509KeyManager;
 
-import org.jboss.security.JSSESecurityDomain;
+import datawave.security.SSLContextInfo;
 
-public class TestJSSESecurityDomain implements JSSESecurityDomain {
+public class TestSSLContextInfo implements SSLContextInfo {
     private final PrivateKey privKey;
     private final X509Certificate[] chain;
     private final String alias;
     private final char[] keyPass;
 
-    public TestJSSESecurityDomain(String alias, PrivateKey privKey, char[] keyPass, X509Certificate[] chain) {
+    public TestSSLContextInfo(String alias, PrivateKey privKey, char[] keyPass, X509Certificate[] chain) {
         this.privKey = privKey;
         this.chain = chain;
         this.alias = alias;
@@ -103,50 +100,5 @@ public class TestJSSESecurityDomain implements JSSESecurityDomain {
     @Override
     public void reloadKeyAndTrustStore() throws Exception {
 
-    }
-
-    @Override
-    public String getServerAlias() {
-        return null;
-    }
-
-    @Override
-    public String getClientAlias() {
-        return null;
-    }
-
-    @Override
-    public boolean isClientAuth() {
-        return false;
-    }
-
-    @Override
-    public Key getKey(String s, String s1) throws Exception {
-        return null;
-    }
-
-    @Override
-    public Certificate getCertificate(String s) throws Exception {
-        return null;
-    }
-
-    @Override
-    public String[] getCipherSuites() {
-        return new String[0];
-    }
-
-    @Override
-    public String[] getProtocols() {
-        return new String[0];
-    }
-
-    @Override
-    public Properties getAdditionalProperties() {
-        return null;
-    }
-
-    @Override
-    public String getSecurityDomain() {
-        return null;
     }
 }

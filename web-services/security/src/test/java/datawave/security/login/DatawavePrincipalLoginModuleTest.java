@@ -37,7 +37,6 @@ import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
 import org.easymock.TestSubject;
-import org.jboss.security.JSSESecurityDomain;
 import org.jboss.security.SimpleGroup;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,6 +45,7 @@ import org.powermock.reflect.Whitebox;
 
 import com.google.common.collect.Lists;
 
+import datawave.security.SSLContextInfo;
 import datawave.security.auth.DatawaveCredential;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
@@ -63,8 +63,10 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
     private static final String DISALLOWLIST_ROLE = "DISALLOWLIST_ROLE";
     @TestSubject
     private DatawavePrincipalLoginModule datawaveLoginModule = new TestDatawavePrincipalLoginModule();
+
     @Mock(type = STRICT)
-    private JSSESecurityDomain securityDomain;
+    private SSLContextInfo sslContextInfo;
+
     @Mock(type = STRICT)
     private DatawaveUserService datawaveUserService;
     private MockCallbackHandler callbackHandler;
@@ -137,8 +139,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
             }
         };
 
-        expect(securityDomain.getKeyStore()).andReturn(keystore);
-        expect(securityDomain.getKeyManagers()).andReturn(new KeyManager[] {keyManager});
+        expect(sslContextInfo.getKeyStore()).andReturn(keystore);
+        expect(sslContextInfo.getKeyManagers()).andReturn(new KeyManager[] {keyManager});
 
         replayAll();
 
@@ -153,7 +155,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         options.put("directRoles", "AuthorizedQueryServer:AuthorizedServer");
 
         Whitebox.setInternalState(datawaveLoginModule, DatawaveUserService.class, datawaveUserService);
-        Whitebox.setInternalState(datawaveLoginModule, JSSESecurityDomain.class, securityDomain);
+        Whitebox.setInternalState(datawaveLoginModule, SSLContextInfo.class, sslContextInfo);
         datawaveLoginModule.initialize(new Subject(), callbackHandler, sharedState, options);
 
         verifyAll();
@@ -170,8 +172,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         callbackHandler.name = datawaveCredential.getUserName();
         callbackHandler.credential = datawaveCredential;
 
-        expect(securityDomain.getKeyStore()).andReturn(keystore);
-        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(sslContextInfo.getKeyStore()).andReturn(keystore);
+        expect(sslContextInfo.getTrustStore()).andReturn(truststore);
         expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(defaultPrincipal.getProxiedUsers());
 
         replayAll();
@@ -194,8 +196,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
                         System.currentTimeMillis());
         DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user));
 
-        expect(securityDomain.getKeyStore()).andReturn(keystore);
-        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(sslContextInfo.getKeyStore()).andReturn(keystore);
+        expect(sslContextInfo.getTrustStore()).andReturn(truststore);
         expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
 
         replayAll();
@@ -253,8 +255,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, s2Roles, null, System.currentTimeMillis());
         DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s2, s1));
 
-        expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
-        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(sslContextInfo.getKeyStore()).andReturn(serverKeystore);
+        expect(sslContextInfo.getTrustStore()).andReturn(truststore);
         expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
 
         replayAll();
@@ -294,8 +296,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, null, null, System.currentTimeMillis());
         DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(defaultPrincipal.getPrimaryUser(), s1, s2));
 
-        expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
-        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(sslContextInfo.getKeyStore()).andReturn(serverKeystore);
+        expect(sslContextInfo.getTrustStore()).andReturn(truststore);
         expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
 
         replayAll();
@@ -340,8 +342,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
 
         DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s1, s2));
 
-        expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
-        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(sslContextInfo.getKeyStore()).andReturn(serverKeystore);
+        expect(sslContextInfo.getTrustStore()).andReturn(truststore);
         expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
 
         replayAll();
@@ -385,8 +387,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
 
         DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s1, s2));
 
-        expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
-        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(sslContextInfo.getKeyStore()).andReturn(serverKeystore);
+        expect(sslContextInfo.getTrustStore()).andReturn(truststore);
         expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
 
         replayAll();
@@ -421,8 +423,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
 
         DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user));
 
-        expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
-        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(sslContextInfo.getKeyStore()).andReturn(serverKeystore);
+        expect(sslContextInfo.getTrustStore()).andReturn(truststore);
         expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
 
         replayAll();
@@ -462,8 +464,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
          */
         DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s2, s1));
 
-        expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
-        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(sslContextInfo.getKeyStore()).andReturn(serverKeystore);
+        expect(sslContextInfo.getTrustStore()).andReturn(truststore);
         expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
 
         replayAll();
@@ -491,8 +493,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, roles, null, System.currentTimeMillis());
         DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user));
 
-        expect(securityDomain.getKeyStore()).andReturn(keystore);
-        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(sslContextInfo.getKeyStore()).andReturn(keystore);
+        expect(sslContextInfo.getTrustStore()).andReturn(truststore);
         expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
 
         replayAll();
@@ -529,8 +531,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
 
         DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s2, s1));
 
-        expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
-        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(sslContextInfo.getKeyStore()).andReturn(serverKeystore);
+        expect(sslContextInfo.getTrustStore()).andReturn(truststore);
         expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
 
         replayAll();
@@ -553,8 +555,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         callbackHandler.name = datawaveCredential.getUserName();
         callbackHandler.credential = datawaveCredential;
 
-        expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
-        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(sslContextInfo.getKeyStore()).andReturn(serverKeystore);
+        expect(sslContextInfo.getTrustStore()).andReturn(truststore);
         expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andThrow(new AuthorizationException());
 
         replayAll();
@@ -597,8 +599,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, null, null, System.currentTimeMillis());
         DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(defaultPrincipal.getPrimaryUser(), s2, s1));
 
-        expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
-        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(sslContextInfo.getKeyStore()).andReturn(serverKeystore);
+        expect(sslContextInfo.getTrustStore()).andReturn(truststore);
         expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
 
         replayAll();
@@ -650,8 +652,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         callbackHandler.name = datawaveCredential.getUserName();
         callbackHandler.credential = datawaveCredential;
 
-        expect(securityDomain.getKeyStore()).andReturn(keystore);
-        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(sslContextInfo.getKeyStore()).andReturn(keystore);
+        expect(sslContextInfo.getTrustStore()).andReturn(truststore);
 
         replayAll();
 
@@ -669,8 +671,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         callbackHandler.name = datawaveCredential.getUserName();
         callbackHandler.credential = datawaveCredential;
 
-        expect(securityDomain.getKeyStore()).andReturn(keystore);
-        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(sslContextInfo.getKeyStore()).andReturn(keystore);
+        expect(sslContextInfo.getTrustStore()).andReturn(truststore);
 
         replayAll();
 
@@ -687,8 +689,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         callbackHandler.name = datawaveCredential.getUserName();
         callbackHandler.credential = datawaveCredential;
 
-        expect(securityDomain.getKeyStore()).andReturn(keystore);
-        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(sslContextInfo.getKeyStore()).andReturn(keystore);
+        expect(sslContextInfo.getTrustStore()).andReturn(truststore);
         expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andThrow(new AuthorizationException("Unable to authenticate"));
 
         replayAll();

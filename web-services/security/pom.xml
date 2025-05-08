@@ -286,6 +286,8 @@
                 <directory>src/test/resources</directory>
                 <excludes>
                     <exclude>*.pkcs12</exclude>
+                    <exclude>*.p12</exclude>
+                    <exclude>*.jks</exclude>
                 </excludes>
             </resource>
         </resources>
