@@ -11,11 +11,6 @@ embed-server --server-config=standalone-full.xml
 # Add the MySQL Connector as a module
 module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.api --resources=mysql/mysql-connector-j-${version.mysql-connector}.jar
 
-# Remove the Elytron security subsystem entirely. Our JAAS security setup doesn't work
-# with it due to some bugs (the RunAsLoginModule doesn't work -- WFLY-11892) so we'll
-# just continue to use the deprecated system for now
-/subsystem=elytron:remove
-
 # Remove the metrics subsystem since it is currently buggy (thread-safety issue) and can cause deployment failures
 # See WFLY-11801 for details.
 /subsystem=microprofile-metrics-smallrye:remove
@@ -155,32 +150,52 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /subsystem=infinispan/cache-container=security/local-cache=security/component=expiration:add(lifespan=300000)
 
 #
-# Add security realm and domain
+# Configure SSL (legacy)
 #
-/core-service=management/security-realm=SSLRealm/:add
-/core-service=management/security-realm=SSLRealm/server-identity=ssl/:add(enabled-protocols=["TLSv1.1","TLSv1.2"],keystore-path=${KEYSTORE},keystore-provider=${KEYSTORE_TYPE},keystore-password="${KEYSTORE_PASSWORD}")
-/core-service=management/security-realm=SSLRealm/authentication=truststore/:add(keystore-path=${TRUSTSTORE},keystore-provider=${TRUSTSTORE_TYPE},keystore-password="${TRUSTSTORE_PASSWORD}")
-/core-service=management/security-realm=SSLRealm/authentication=jaas/:add(name=datawave)
+# /core-service=management/security-realm=SSLRealm/:add
+# /core-service=management/security-realm=SSLRealm/server-identity=ssl/:add(enabled-protocols=["TLSv1.1","TLSv1.2"],keystore-path=${KEYSTORE},keystore-provider=${KEYSTORE_TYPE},keystore-password="${KEYSTORE_PASSWORD}")
+# /core-service=management/security-realm=SSLRealm/authentication=truststore/:add(keystore-path=${TRUSTSTORE},keystore-provider=${TRUSTSTORE_TYPE},keystore-password="${TRUSTSTORE_PASSWORD}")
+# /core-service=management/security-realm=SSLRealm/authentication=jaas/:add(name=datawave)
 
-/subsystem=security/security-domain=datawave:add(cache-type=infinispan)
-/subsystem=security/security-domain=datawave/authentication=classic:add
-/subsystem=security/security-domain=datawave/authentication=classic/login-module=Remoting:add(code=Remoting,flag=optional,module-options={password-stacking=useFirstPass})
-/subsystem=security/security-domain=datawave/authentication=classic/login-module=RunAs:add(code=RunAs,flag=required,module-options={roleName=InternalUser})
-/subsystem=security/security-domain=datawave/authentication=classic/login-module=Datawave:add(code=datawave.security.login.DatawavePrincipalLoginModule,flag=required,module-options={principalClass=datawave.security.authorization.DatawavePrincipal,verifier=datawave.security.login.DatawaveCertVerifier,ocspLevel=off,allowUserProxying=false,trustedHeaderLogin="${dw.trusted.header.authentication:false}"})
-/subsystem=security/security-domain=datawave/jsse=classic:add(keystore={type="${KEYSTORE_TYPE}",password="${KEYSTORE_PASSWORD}",url="file://${KEYSTORE}"},truststore={type="${TRUSTSTORE_TYPE}",password="${TRUSTSTORE_PASSWORD}",url="file://${TRUSTSTORE}"})
-/subsystem=security/security-domain=JmsXARealm:add(cache-type=default)
-/subsystem=security/security-domain=JmsXARealm/authentication=classic:add
-/subsystem=security/security-domain=JmsXARealm/authentication=classic/login-module=ConfiguredIdentity:add(code=ConfiguredIdentity,flag=required,module-options={principal=${dw.hornetq.system.userName},userName=${dw.hornetq.system.userName},password=${dw.hornetq.system.password},managedConnectionFactoryName="jboss.jca:service=TxCM,name=JmsXA"})
+#
+# Configure SSL (Elytron)
+#
+/subsystem=elytron/key-store=httpsKeyStore:add(path=${KEYSTORE},credential-reference={clear-text="${KEYSTORE_PASSWORD}"},type=${KEYSTORE_TYPE})
+/subsystem=elytron/key-manager=httpsKeyManager:add(key-store=httpsKeyStore,credential-reference={clear-text=${KEYSTORE_PASSWORD})
+/subsystem=elytron/key-store=httpsTrustStore:add(path=${TRUSTSTORE},credential-reference={clear-text="${TRUSTSTORE_PASSWORD}"},type=${TRUSTSTORE_TYPE})
+/subsystem=elytron/trust-manager=httpsTrustManager:add(key-store=httpsTrustStore)
+/subsystem=elytron/server-ssl-context=httpsSSLContext:add(key-manager=httpsKeyManager,trust-manager=httpsTrustManager,protocols=["TLSv1.1","TLSv1.2"])
 
-/subsystem=security/security-domain=datawave-client:add(cache-type=infinispan)
-/subsystem=security/security-domain=datawave-client/authentication=classic:add
-/subsystem=security/security-domain=datawave-client/authentication=classic/login-module=ClientCert:add(code=datawave.security.login.ClientCertLoginModule,flag=required,module-options={password-stacking=useFirstPass})
-/subsystem=security/security-domain=datawave-client/authentication=classic/login-module=Client:add(code=Client,flag=required,module-options={password-stacking=useFirstPass,restore-login-identity=true})
+#
+# Configure datawave security domain (legacy)
+#
+#/subsystem=security/security-domain=datawave:add(cache-type=infinispan)
+#/subsystem=security/security-domain=datawave/authentication=classic:add
+#/subsystem=security/security-domain=datawave/authentication=classic/login-module=Remoting:add(code=Remoting,flag=optional,module-options={password-stacking=useFirstPass})
+#/subsystem=security/security-domain=datawave/authentication=classic/login-module=RunAs:add(code=RunAs,flag=required,module-options={roleName=InternalUser})
+#/subsystem=security/security-domain=datawave/authentication=classic/login-module=Datawave:add(code=datawave.security.login.DatawavePrincipalLoginModule,flag=required,module-options={principalClass=datawave.security.authorization.DatawavePrincipal,verifier=datawave.security.login.DatawaveCertVerifier,ocspLevel=off,allowUserProxying=false,trustedHeaderLogin="${dw.trusted.header.authentication:false}"})
+#/subsystem=security/security-domain=datawave/jsse=classic:add(keystore={type="${KEYSTORE_TYPE}",password="${KEYSTORE_PASSWORD}",url="file://${KEYSTORE}"},truststore={type="${TRUSTSTORE_TYPE}",password="${TRUSTSTORE_PASSWORD}",url="file://${TRUSTSTORE}"})
+
+# Configure JmsXA realm (legacy)
+#/subsystem=security/security-domain=JmsXARealm:add(cache-type=default)
+#/subsystem=security/security-domain=JmsXARealm/authentication=classic:add
+#/subsystem=security/security-domain=JmsXARealm/authentication=classic/login-module=ConfiguredIdentity:add(code=ConfiguredIdentity,flag=required,module-options={principal=${dw.hornetq.system.userName},userName=${dw.hornetq.system.userName},password=${dw.hornetq.system.password},managedConnectionFactoryName="jboss.jca:service=TxCM,name=JmsXA"})
+
+# Configure datawave-client domain (legacy
+#/subsystem=security/security-domain=datawave-client:add(cache-type=infinispan)
+#/subsystem=security/security-domain=datawave-client/authentication=classic:add
+#/subsystem=security/security-domain=datawave-client/authentication=classic/login-module=ClientCert:add(code=datawave.security.login.ClientCertLoginModule,flag=required,module-options={password-stacking=useFirstPass})
+#/subsystem=security/security-domain=datawave-client/authentication=classic/login-module=Client:add(code=Client,flag=required,module-options={password-stacking=useFirstPass,restore-login-identity=true})
 
 # Configure the HTTP/HTTPS listener for undertow
 /subsystem=undertow/server=default-server/http-listener=default/:write-attribute(name=record-request-start-time,value=true)
 /subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=record-request-start-time,value=true)
-/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=security-realm,value=SSLRealm)
+
+# Legacy configuration referencing legacy ssl realm
+# /subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=security-realm,value=SSLRealm)
+# Reference to new ssl context
+/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=ssl-context,value=httpsSSLContext)
+
 /subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=verify-client,value=REQUESTED)
 
 #
