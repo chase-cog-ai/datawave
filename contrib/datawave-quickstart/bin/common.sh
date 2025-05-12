@@ -84,10 +84,14 @@ function askYesNo() {
 function verifyChecksum() {
   # $1 - distribution URI
   # $2 - service directory
-  # $3 - tarball sha512 checksum
-  local tarballName="$(basename "$1")"
+  # $3 - tarball checksum
+  # $4 - checksum algorithm (sha1, sha512, etc. Defaults to sha512)
+  local tarballName
+  tarballName="$(basename "$1")"
   if [[ -f "$2/${tarballName}" ]]; then
-      local calculatedChecksum="$( cd $2 && sha512sum ${tarballName} )"
+      local checksumFunction="${4:-sha512}sum"
+      local calculatedChecksum
+      calculatedChecksum="$( cd "$2" && ${checksumFunction} "${tarballName}" )"
       if [[ "${calculatedChecksum}" = "$3  ${tarballName}" ]] ; then
           info "Checksum verification success... [${tarballName}]"
       else
