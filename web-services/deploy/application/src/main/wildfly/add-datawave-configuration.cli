@@ -160,11 +160,17 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 #
 # Configure SSL (Elytron)
 #
-/subsystem=elytron/key-store=httpsKeyStore:add(path=${KEYSTORE},credential-reference={clear-text="${KEYSTORE_PASSWORD}"},type=${KEYSTORE_TYPE})
-/subsystem=elytron/key-manager=httpsKeyManager:add(key-store=httpsKeyStore,credential-reference={clear-text=${KEYSTORE_PASSWORD})
-/subsystem=elytron/key-store=httpsTrustStore:add(path=${TRUSTSTORE},credential-reference={clear-text="${TRUSTSTORE_PASSWORD}"},type=${TRUSTSTORE_TYPE})
-/subsystem=elytron/trust-manager=httpsTrustManager:add(key-store=httpsTrustStore)
-/subsystem=elytron/server-ssl-context=httpsSSLContext:add(key-manager=httpsKeyManager,trust-manager=httpsTrustManager,protocols=["TLSv1.1","TLSv1.2"])
+# Create the server key store.
+/subsystem=elytron/key-store=serverKeyStore:add(path=${KEYSTORE},credential-reference={clear-text="${KEYSTORE_PASSWORD}"},type=${KEYSTORE_TYPE})
+# Create the server key manager.
+/subsystem=elytron/key-manager=serverKeyManager:add(key-store=serverKeyStore,credential-reference={clear-text=${KEYSTORE_PASSWORD})
+# Create the server trust store.
+/subsystem=elytron/key-store=serverTrustStore:add(path=${TRUSTSTORE},credential-reference={clear-text="${TRUSTSTORE_PASSWORD}"},type=${TRUSTSTORE_TYPE})
+# Create the server trust manager.
+/subsystem=elytron/trust-manager=serverTrustManager:add(key-store=serverTrustStore)
+# Create the server SSL context. The protocols "TLSv1.1" and "TLSv1.2" will be supported, a client certificate will be required on an SSL handshake, and the
+# security-domain 'datawave' will be used for authentication during the SSL session establishment.
+/subsystem=elytron/server-ssl-context=serverSSLContext:add(key-manager=serverKeyManager,trust-manager=serverTrustManager,protocols=["TLSv1.1","TLSv1.2"],need-client-auth=true,security-domain=datawave)
 
 #
 # Configure datawave security domain (legacy)
@@ -179,19 +185,34 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 #
 # Configure datawave security domain (elytron)
 #
-/subsystem=elytron/key-store-realm=ksRealm:add(key-store=httpsKeyStore)
-# Create a cache for the keystore. Infinispan caches are not supported for security realms in Elytron. Not sure if this is a deal-breaker.
-/subsystem=elytron/caching-realm=cachedKsRealm:add(realm=ksRealm)
+# Create an initial identity with the role InternalUser. This allows for access to the EAP management interfaces, and further authentication will be performed
+# by the datawaveRealm.
 /subsystem=elytron/constant-role-mapper=internalUserRoleMapper:add(roles=[{role=InternalUser}])
-/subsystem=elytron/security-domain=datawave:add(default-realm=cachedKsRealm,realms=[cachedKsRealm],role-mapper=internalUserRuleMapper)
+/subsystem=elytron/identity-realm=initialIdentity:add()
 
+# Create a custom realm that handles preparing the DatawavePrincipal during authentication.
+# Options:
+# - verifier=STRING (optional, default=null)
+#       The class name of an org.jboss.security.auths.certs.X509CertificateVerifier that will be
+# - ocspLevel=STRING (optional, default=null)
+#       Sets the oscp level of the verifier. Required when the verifier is datawave.security.login.DatawaveCertVerifier.
+# - trustedHeaderLogin=BOOLEAN (optional, default=false)
+#       When set to true, the client certificate will not be validated, and will be treated as a valid certificate.
+# - jwtHeaderLogin=BOOLEAN (optional, default=false)
+#       When set to true, the client certificate will not be validated, and the datawave principal will be created from the credential's jwt token.
+# - requiredRoles=LIST (optional, default="AuthorizedUser:AuthorizedServer:AuthorizedQueryServer:AuthorizedProxiedServer:)
+#       ':' delimited list of roles that either all entities in the call chain must contain at least one of, or else the required roles will not be retained for the final identity.
+# - directRoles=LIST (optional, default="AuthorizedServer:AuthorizedQueryServer")
+#       ':' delimited list of roles that must be present if the client is a terminal server
+#
+# -
+/subsystem/elytron/custom-realm=datawaveRealm:add(class-name=,configuration={},module=)
+/subsystem=elytron/security-domain=datawave:add(default-realm=cachedKsRealm,realms=[datawaveRealm],role-mapper=internalUserRoleMapper)
 
 # Configure JmsXA realm (legacy)
 #/subsystem=security/security-domain=JmsXARealm:add(cache-type=default)
 #/subsystem=security/security-domain=JmsXARealm/authentication=classic:add
 #/subsystem=security/security-domain=JmsXARealm/authentication=classic/login-module=ConfiguredIdentity:add(code=ConfiguredIdentity,flag=required,module-options={principal=${dw.hornetq.system.userName},userName=${dw.hornetq.system.userName},password=${dw.hornetq.system.password},managedConnectionFactoryName="jboss.jca:service=TxCM,name=JmsXA"})
-
-module add --name=dw.login.modules --reources=
 
 # Configure datawave-client domain (legacy)
 #/subsystem=security/security-domain=datawave-client:add(cache-type=infinispan)
@@ -205,9 +226,10 @@ module add --name=dw.login.modules --reources=
 
 # Legacy configuration referencing legacy ssl realm
 # /subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=security-realm,value=SSLRealm)
-# Reference to new ssl context, remove reference to security-realm
+
+# Switch https-listener from the legacy security-realm to the Elytron server ssl context.
 /subsystem=undertow/server=default-server/https-listener=https:undefine-attribute(name=security-realm)
-/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=ssl-context,value=httpsSSLContext)
+/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=ssl-context,value=serverSSLContext)
 
 /subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=verify-client,value=REQUESTED)
 
