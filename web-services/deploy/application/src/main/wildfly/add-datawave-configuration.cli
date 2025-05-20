@@ -179,7 +179,12 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 #
 # Configure datawave security domain (elytron)
 #
-subsystem=security/jaas-realm=jaasRealm:add(entry=datawave,path="${JAAS_REALM_CONF_FILE}")
+/subsystem=elytron/key-store-realm=ksRealm:add(key-store=httpsKeyStore)
+# Create a cache for the keystore. Infinispan caches are not supported for security realms in Elytron. Not sure if this is a deal-breaker.
+/subsystem=elytron/caching-realm=cachedKsRealm:add(realm=ksRealm)
+/subsystem=elytron/constant-role-mapper=internalUserRoleMapper:add(roles=[{role=InternalUser}])
+/subsystem=elytron/security-domain=datawave:add(default-realm=cachedKsRealm,realms=[cachedKsRealm],role-mapper=internalUserRuleMapper)
+
 
 # Configure JmsXA realm (legacy)
 #/subsystem=security/security-domain=JmsXARealm:add(cache-type=default)
