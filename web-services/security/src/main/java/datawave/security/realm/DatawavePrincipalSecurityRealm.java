@@ -1,5 +1,8 @@
 package datawave.security.realm;
 
+import com.google.common.base.Preconditions;
+import org.apache.commons.logging.Log;
+import org.apache.log4j.Logger;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.realm.CacheableSecurityRealm;
 import org.wildfly.security.auth.server.RealmIdentity;
@@ -15,6 +18,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class DatawavePrincipalSecurityRealm implements CacheableSecurityRealm {
+    
+    private static final Logger log = Logger.getLogger(DatawavePrincipalSecurityRealm.class);
     
     private X509CertificateVerifier verifier;
     private boolean trustedHeaderLogin;
@@ -46,12 +51,14 @@ public class DatawavePrincipalSecurityRealm implements CacheableSecurityRealm {
     @Override
     public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec)
                     throws RealmUnavailableException {
-        return null;
+        Preconditions.checkNotNull(credentialType, "credentialType");
+        return SupportLevel.POSSIBLY_SUPPORTED;
     }
     
     @Override
     public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName) throws RealmUnavailableException {
-        return null;
+        Preconditions.checkNotNull(evidenceType, "evidenceType");
+        return SupportLevel.POSSIBLY_SUPPORTED;
     }
     
     @Override
