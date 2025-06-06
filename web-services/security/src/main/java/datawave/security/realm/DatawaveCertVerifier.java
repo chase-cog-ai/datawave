@@ -1,6 +1,6 @@
 package datawave.security.realm;
 
-import org.jboss.logging.Logger;
+import org.apache.log4j.Logger;
 
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
@@ -46,8 +46,9 @@ public class DatawaveCertVerifier implements X509CertificateVerifier {
 
     public void setLogger(Logger log) {
         this.log = log;
-        if (log.isTraceEnabled())
+        if (log.isTraceEnabled()) {
             trace = true;
+        }
     }
 
     public OcspLevel getOcspLevel() {

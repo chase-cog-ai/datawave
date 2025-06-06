@@ -204,8 +204,6 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 #       ':' delimited list of roles that either all entities in the call chain must contain at least one of, or else the required roles will not be retained for the final identity.
 # - directRoles=LIST (optional, default="AuthorizedServer:AuthorizedQueryServer")
 #       ':' delimited list of roles that must be present if the client is a terminal server
-#
-# -
 /subsystem/elytron/custom-realm=datawaveRealm:add(class-name=,configuration={},module=)
 /subsystem=elytron/security-domain=datawave:add(default-realm=cachedKsRealm,realms=[datawaveRealm],role-mapper=internalUserRoleMapper)
 
