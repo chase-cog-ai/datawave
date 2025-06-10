@@ -5,13 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
-import com.google.common.base.Preconditions;
 import datawave.configuration.spring.BeanProvider;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.util.StringUtils;
 import org.apache.log4j.Logger;
 import org.wildfly.security.auth.SupportLevel;
+import org.wildfly.security.auth.realm.CacheableSecurityRealm;
 import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.RealmUnavailableException;
 import org.wildfly.security.auth.server.SecurityRealm;
@@ -21,7 +21,6 @@ import org.wildfly.security.evidence.Evidence;
 import javax.inject.Inject;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.X509KeyManager;
-import javax.security.auth.x500.X500Principal;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -32,8 +31,9 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
-public class DatawavePrincipalSecurityRealm implements SecurityRealm {
+public class DatawavePrincipalSecurityRealm implements CacheableSecurityRealm {
     
     static final String VERIFIER = "verifier";
     static final String OSCP = "oscpLevel";
@@ -57,13 +57,8 @@ public class DatawavePrincipalSecurityRealm implements SecurityRealm {
     @Inject
     private DatawaveUserService datawaveUserService;
     
-    @Inject
     private KeyStore serverKeyStore;
-    
-    @Inject
     private KeyStore serverTrustStore;
-    
-    @Inject
     private KeyManager serverKeyManager;
     
     private X509CertificateVerifier verifier;
@@ -97,7 +92,7 @@ public class DatawavePrincipalSecurityRealm implements SecurityRealm {
         initDisallowlistUserRole(config.get(DISALLOWLIST_USER_ROLE));
         initRequiredRoles(config.get(REQUIRED_ROLES));
         initDirectRoles(config.get(DIRECT_ROLES));
-        initJWTTokenHandler();
+        // initJWTTokenHandler();
         
         if(trace) {
             log.trace("exit: initialize(Map)" + config);
@@ -238,24 +233,54 @@ public class DatawavePrincipalSecurityRealm implements SecurityRealm {
     @Override
     public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec)
                     throws RealmUnavailableException {
-        Preconditions.checkNotNull(credentialType, "credentialType");
+        if(trace) {
+            log.trace("enter: getCredentialAcquireSupport(" + credentialType + ", " + algorithmName + ", " + parameterSpec + ")");
+        }
+        log.trace("exit: getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec)");
         return SupportLevel.POSSIBLY_SUPPORTED;
     }
     
     @Override
     public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName) throws RealmUnavailableException {
-        Preconditions.checkNotNull(evidenceType, "evidenceType");
+        if(trace) {
+            log.trace("enter: getEvidenceVerifySupport(" + evidenceType + ", " + algorithmName + ")");
+        }
+        log.trace("exit: getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName)");
         return SupportLevel.POSSIBLY_SUPPORTED;
     }
     
     @Override
     public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
-        if(principal instanceof X500Principal) {
-            X500Principal x500Principal = (X500Principal) principal;
-            
+        if(trace) {
+            log.trace("enter: getRealmIdentity(" + principal + ")");
         }
-        return SecurityRealm.super.getRealmIdentity(principal);
+        
+        if(principal != null) {
+            log.trace("principal instanceof " + principal.getClass().getName());
+        }
+        
+        RealmIdentity realmIdentity = CacheableSecurityRealm.super.getRealmIdentity(principal);
+        log.trace("exit: getRealmIdentity(Principal principal)");
+        return realmIdentity;
     }
     
+    @Override
+    public RealmIdentity getRealmIdentity(Evidence evidence) throws RealmUnavailableException {
+        if (trace) {
+            log.trace("enter: getRealmIdentity(" + evidence + ")");
+        }
+        
+        if(evidence != null) {
+            log.trace("evidence instanceof " + evidence.getClass().getName());
+        }
+        
+        RealmIdentity realmIdentity = CacheableSecurityRealm.super.getRealmIdentity(evidence);
+        log.trace("exit: getRealmIdentity(Evidence evidence)");
+        return realmIdentity;
+    }
     
+    @Override
+    public void registerIdentityChangeListener(Consumer<Principal> listener) {
+    
+    }
 }

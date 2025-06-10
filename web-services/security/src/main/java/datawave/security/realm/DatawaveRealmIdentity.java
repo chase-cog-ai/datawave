@@ -1,6 +1,5 @@
 package datawave.security.realm;
 
-import datawave.security.auth.DatawaveCredential;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.RealmUnavailableException;
@@ -11,8 +10,6 @@ import java.security.Principal;
 import java.security.spec.AlgorithmParameterSpec;
 
 public class DatawaveRealmIdentity implements RealmIdentity {
-    
-    private DatawaveCredential credential;
     
     @Override
     public Principal getRealmIdentityPrincipal() {

@@ -93,7 +93,9 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
         trace = log.isTraceEnabled();
 
         super.initialize(subject, callbackHandler, sharedState, options);
-
+        
+        
+        
         // Have the bean container do injection for us so we don't have to do JNDI lookup.
         performFieldInjection();
 
