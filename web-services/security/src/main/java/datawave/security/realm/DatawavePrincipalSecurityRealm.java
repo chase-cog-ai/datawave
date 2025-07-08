@@ -33,14 +33,13 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-public class DatawavePrincipalSecurityRealm implements CacheableSecurityRealm {
+public class DatawavePrincipalSecurityRealm implements SecurityRealm {
     
     static final String VERIFIER = "verifier";
     static final String OSCP = "oscpLevel";
     static final String TRUSTED_HEADER_LOGIN = "trustedHeaderLogin";
     static final String JWT_HEADER_LOGIN = "jwtHeaderLogin";
     static final String DISALLOWLIST_USER_ROLE = "disallowlistUserRole";
-    static final String REQUIRED_ROLES = "requiredRoles";
     static final String DIRECT_ROLES = "directRoles";
     
     static final String ROLE_AUTHORIZED_USER = "AuthorizedUser";
@@ -65,7 +64,6 @@ public class DatawavePrincipalSecurityRealm implements CacheableSecurityRealm {
     private boolean trustedHeaderLogin;
     private boolean jwtHeaderLogin;
     private String disallowlistUserRole;
-    private Set<String> requiredRoles;
     private Set<String> directRoles;
     private JWTTokenHandler jwtTokenHandler;
     private boolean trace;
@@ -90,9 +88,8 @@ public class DatawavePrincipalSecurityRealm implements CacheableSecurityRealm {
         initTrustedHeaderLogin(config.get(TRUSTED_HEADER_LOGIN));
         initJwtHeaderLogin(config.get(JWT_HEADER_LOGIN));
         initDisallowlistUserRole(config.get(DISALLOWLIST_USER_ROLE));
-        initRequiredRoles(config.get(REQUIRED_ROLES));
         initDirectRoles(config.get(DIRECT_ROLES));
-        // initJWTTokenHandler();
+         initJWTTokenHandler();
         
         if(trace) {
             log.trace("exit: initialize(Map)" + config);
@@ -173,20 +170,6 @@ public class DatawavePrincipalSecurityRealm implements CacheableSecurityRealm {
     }
     
     /**
-     * Initialize the required roles for this {@link DatawavePrincipalSecurityRealm} from a colon-delimited list of roles. If the given string is not null, the
-     * roles will be cleared, and the new roles added. Otherwise, all default required roles will be added.
-     * @param requiredRoles the required roles
-     */
-    private void initRequiredRoles(String requiredRoles) {
-        if(requiredRoles != null) {
-            this.requiredRoles.clear();
-            this.requiredRoles.addAll(Arrays.asList(StringUtils.split(requiredRoles, ':', false)));
-        } else {
-            this.requiredRoles.addAll(defaultRequiredRoles);
-        }
-    }
-    
-    /**
      * Initialize the direct roles for this {@link DatawavePrincipalSecurityRealm} from a colon-delimited list of roles. If the given string is not null, the
      * roles will be cleared, and the new roles added. Otherwise, all default direct roles will be added.
      * @param directRoles the direct roles
@@ -231,8 +214,7 @@ public class DatawavePrincipalSecurityRealm implements CacheableSecurityRealm {
     }
     
     @Override
-    public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec)
-                    throws RealmUnavailableException {
+    public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) {
         if(trace) {
             log.trace("enter: getCredentialAcquireSupport(" + credentialType + ", " + algorithmName + ", " + parameterSpec + ")");
         }
@@ -241,46 +223,11 @@ public class DatawavePrincipalSecurityRealm implements CacheableSecurityRealm {
     }
     
     @Override
-    public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName) throws RealmUnavailableException {
+    public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName) {
         if(trace) {
             log.trace("enter: getEvidenceVerifySupport(" + evidenceType + ", " + algorithmName + ")");
         }
         log.trace("exit: getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName)");
         return SupportLevel.POSSIBLY_SUPPORTED;
-    }
-    
-    @Override
-    public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
-        if(trace) {
-            log.trace("enter: getRealmIdentity(" + principal + ")");
-        }
-        
-        if(principal != null) {
-            log.trace("principal instanceof " + principal.getClass().getName());
-        }
-        
-        RealmIdentity realmIdentity = CacheableSecurityRealm.super.getRealmIdentity(principal);
-        log.trace("exit: getRealmIdentity(Principal principal)");
-        return realmIdentity;
-    }
-    
-    @Override
-    public RealmIdentity getRealmIdentity(Evidence evidence) throws RealmUnavailableException {
-        if (trace) {
-            log.trace("enter: getRealmIdentity(" + evidence + ")");
-        }
-        
-        if(evidence != null) {
-            log.trace("evidence instanceof " + evidence.getClass().getName());
-        }
-        
-        RealmIdentity realmIdentity = CacheableSecurityRealm.super.getRealmIdentity(evidence);
-        log.trace("exit: getRealmIdentity(Evidence evidence)");
-        return realmIdentity;
-    }
-    
-    @Override
-    public void registerIdentityChangeListener(Consumer<Principal> listener) {
-    
     }
 }
