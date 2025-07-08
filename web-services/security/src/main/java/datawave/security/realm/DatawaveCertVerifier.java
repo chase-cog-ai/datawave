@@ -1,10 +1,10 @@
 package datawave.security.realm;
 
-import org.apache.log4j.Logger;
-
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.Objects;
+
+import org.apache.log4j.Logger;
 
 public class DatawaveCertVerifier implements X509CertificateVerifier {
 

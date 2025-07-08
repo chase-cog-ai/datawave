@@ -194,8 +194,8 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 #
 # Create an initial identity with the role InternalUser. This allows for access to the EAP management interfaces, and further authentication will be performed
 # by the datawaveRealm.
-/subsystem=elytron/constant-role-mapper=internalUserRoleMapper:add(roles=[{role=InternalUser}])
-/subsystem=elytron/identity-realm=initialIdentity:add()
+#/subsystem=elytron/constant-role-mapper=internalUserRoleMapper:add(roles=[{role=InternalUser}])
+#/subsystem=elytron/identity-realm=initialIdentity:add()
 
 # Create a custom realm that handles preparing the DatawavePrincipal during authentication.
 # Options:

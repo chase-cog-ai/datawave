@@ -1,4 +1,3 @@
 package datawave.security.realm;
 
-public class AttributeConstants {
-}
+public class AttributeConstants {}
