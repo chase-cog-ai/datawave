@@ -148,6 +148,11 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 
 /system-property=jexl.function.namespace.registry:add(value="datawave.query.jexl.functions.JexlFunctionNamespaceRegistry.class")
 
+
+# Add a module containing custom wildfly components.
+# todo update once module is configured correctly to deploy along with ear
+module add --name=datawave.custom.components --resources=datawave/datawave-ws-security-{version.datawave}.jar
+
 #
 # Add cache container for the security realm
 #
@@ -192,10 +197,6 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 #
 # Configure datawave security domain (elytron)
 #
-# Create an initial identity with the role InternalUser. This allows for access to the EAP management interfaces, and further authentication will be performed
-# by the datawaveRealm.
-#/subsystem=elytron/constant-role-mapper=internalUserRoleMapper:add(roles=[{role=InternalUser}])
-#/subsystem=elytron/identity-realm=initialIdentity:add()
 
 # Create a custom realm that handles preparing the DatawavePrincipal during authentication.
 # Options:
@@ -211,8 +212,8 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 #       ':' delimited list of roles that either all entities in the call chain must contain at least one of, or else the required roles will not be retained for the final identity.
 # - directRoles=LIST (optional, default="AuthorizedServer:AuthorizedQueryServer")
 #       ':' delimited list of roles that must be present if the client is a terminal server
-/subsystem/elytron/custom-realm=datawaveRealm:add(class-name=,configuration={},module=)
-/subsystem=elytron/security-domain=datawave:add(default-realm=cachedKsRealm,realms=[datawaveRealm],role-mapper=internalUserRoleMapper)
+/subsystem/elytron/custom-realm=datawaveRealm:add(class-name=,configuration={verifier=datawave.security.login.DatawaveCertVerifier,ocspLevel=off,allowUserProxying=false,trustedHeaderLogin="${dw.trusted.header.authentication:false}"},module=datawave.custom.components)
+/subsystem=elytron/security-domain=datawave:add(default-realm=cachedKsRealm,realms=[datawaveRealm])
 
 # Configure JmsXA realm (legacy)
 #/subsystem=security/security-domain=JmsXARealm:add(cache-type=default)
