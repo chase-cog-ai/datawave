@@ -14,14 +14,10 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.X509KeyManager;
-import javax.security.auth.login.CredentialException;
-import javax.security.auth.login.LoginException;
 
 import datawave.security.SSLContextInfo;
-import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import org.apache.log4j.Logger;
-import org.picketbox.util.StringUtil;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.callback.CredentialCallback;
 import org.wildfly.security.auth.server.RealmIdentity;
