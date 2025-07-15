@@ -15,8 +15,6 @@ import javax.inject.Inject;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.X509KeyManager;
 
-import datawave.security.SSLContextInfo;
-import datawave.security.authorization.DatawavePrincipal;
 import org.apache.log4j.Logger;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.callback.CredentialCallback;
@@ -33,37 +31,38 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 
 import datawave.configuration.spring.BeanProvider;
+import datawave.security.SSLContextInfo;
+import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.util.StringUtils;
 
 public class DatawavePrincipalSecurityRealm implements SecurityRealm {
-    
-    
+
     static final String VERIFIER = "verifier";
     static final String OSCP = "oscpLevel";
     static final String TRUSTED_HEADER_LOGIN = "trustedHeaderLogin";
     static final String JWT_HEADER_LOGIN = "jwtHeaderLogin";
     static final String DISALLOWLIST_USER_ROLE = "disallowlistUserRole";
     static final String DIRECT_ROLES = "directRoles";
-    
+
     static final String ROLE_AUTHORIZED_USER = "AuthorizedUser";
     static final String ROLE_AUTHORIZED_SERVER = "AuthorizedServer";
     static final String ROLE_AUTHORIZED_QUERY_SERVER = "AuthorizedQueryServer";
     static final String ROLE_AUTHORIZED_PROXIED_SERVER = "AuthorizedProxiedServer";
-    
+
     private static final Set<String> defaultRequiredRoles = Set.of(ROLE_AUTHORIZED_USER, ROLE_AUTHORIZED_SERVER, ROLE_AUTHORIZED_QUERY_SERVER,
                     ROLE_AUTHORIZED_PROXIED_SERVER);
     private static final Set<String> defaultDirectRoles = Set.of(ROLE_AUTHORIZED_SERVER, ROLE_AUTHORIZED_QUERY_SERVER);
-    
+
     private final Logger log;
-    
+
     // todo find a way to inject this
     private CredentialCallback credentialCallback;
-    
+
     @Inject
     private SSLContextInfo sslContextInfo;
-    
+
     @Inject
     private DatawaveUserService datawaveUserService;
 
@@ -237,7 +236,7 @@ public class DatawavePrincipalSecurityRealm implements SecurityRealm {
         }
 
     }
-    
+
     @Override
     public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) {
         if (trace) {
@@ -246,7 +245,7 @@ public class DatawavePrincipalSecurityRealm implements SecurityRealm {
         log.trace("exit: getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec)");
         return SupportLevel.POSSIBLY_SUPPORTED;
     }
-    
+
     @Override
     public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName) {
         if (trace) {
@@ -255,50 +254,48 @@ public class DatawavePrincipalSecurityRealm implements SecurityRealm {
         log.trace("exit: getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName)");
         return SupportLevel.POSSIBLY_SUPPORTED;
     }
-    
+
     @Override
     public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
         if (trace) {
             log.trace("enter: getRealmIdentity(Principal): principal=" + principal);
         }
-        
+
         if (principal instanceof DatawavePrincipal) {
             DatawavePrincipal datawavePrincipal = (DatawavePrincipal) principal;
             log.trace("Examining principal for " + datawavePrincipal.getName());
-            
+
             DatawaveCredential credential = getDatawaveCredential();
-            if(!validateCredential(credential)) {
+            if (!validateCredential(credential)) {
                 if (trace) {
                     log.trace("Credential validation failed for " + credential);
                 }
                 return RealmIdentity.NON_EXISTENT;
             }
-            
-            
+
         } else {
             log.trace("principal is instanceof " + principal.getClass().getName());
         }
-        
-        
-        if(trace) {
+
+        if (trace) {
             log.trace("exit: getRealmIdentity(Principal): principal=" + principal);
         }
         // Return non-existent for now until more details are hammered out.
         return RealmIdentity.NON_EXISTENT;
     }
-    
+
     protected DatawaveCredential getDatawaveCredential() {
         if (trace) {
             log.trace("enter: getDatawaveCredential()");
         }
-        
+
         Credential credential;
         try {
             credential = credentialCallback.getCredential();
-            if(credential == null) {
+            if (credential == null) {
                 log.warn("null credential returned from callback");
                 return null;
-            } else if(credential instanceof DatawaveCredential) {
+            } else if (credential instanceof DatawaveCredential) {
                 return (DatawaveCredential) credential;
             } else {
                 log.warn("credential other than DatawaveCredential returned from callback. Credential instanceof " + credential.getClass().getName());
@@ -311,65 +308,38 @@ public class DatawavePrincipalSecurityRealm implements SecurityRealm {
             log.trace("exit: getDatawaveCredential()");
         }
     }
-    
+
     protected boolean validateCredential(DatawaveCredential credential) {
         if (trace) {
             log.trace("enter: validateCredential");
         }
-        
-        /*String alias = credential.getUserName();
-        if (trace) {
-            log.trace("alias = " + alias);
-        }
-        if (StringUtil.isNullOrEmpty(alias)) {
-            identity = unauthenticatedIdentity;
-            log.trace("Authenticating as unauthenticatedIdentity=" + identity);
-        }
-        if (trace) {
-            log.trace("identity = " + identity);
-        }
-        if (identity == null) {
-            if (credential.getCertificate() != null || (!trustedHeaderLogin && !jwtHeaderLogin)) {
-                if (!validateCertificateCredential(credential)) {
-                    log.debug("Bad credential for alias=" + credential.getUserName());
-                    throw new CredentialException("Validation of credential failed");
-                }
-            }
-            
-            if (!jwtHeaderLogin || credential.getJwtToken() == null) {
-                try {
-                    identity = new DatawavePrincipal(datawaveUserService.lookup(credential.getEntities()));
-                } catch (AuthorizationException e) {
-                    Throwable cause = e.getCause();
-                    String message = cause != null ? cause.getMessage() : e.getMessage();
-                    log.debug("Failing login due to datawave user service exception " + e.getMessage(), e);
-                    // should result in a SERVICE_UNAVAILABLE (503) response code in DatawaveAuthenticationMechanism.sendChallenge
-                    throw new LoginException("Unable to authenticate: " + message);
-                } catch (Exception e) {
-                    log.debug("Failing login due to datawave user service exception " + e.getMessage(), e);
-                    // should result in a SERVICE_UNAVAILABLE (503) response code in DatawaveAuthenticationMechanism.sendChallenge
-                    throw new LoginException("Unable to authenticate: " + e.getMessage());
-                }
-            } else {
-                try {
-                    identity = new DatawavePrincipal(jwtTokenHandler.createUsersFromToken(credential.getJwtToken()));
-                } catch (Exception e) {
-                    log.debug("Failing login due to JWT token exception " + e.getMessage(), e);
-                    // should result in an UNAUTHORIZED (401) response code in DatawaveAuthenticationMechanism.sendChallenge
-                    throw new CredentialException("Unable to authenticate: " + e.getMessage());
-                }
-            }
-        }
-        if (getUseFirstPass()) {
-            sharedState.put("javax.security.auth.login.name", alias);
-            sharedState.put("javax.security.auth.login.password", credential.getCertificate());
-        }*/
+
+        /*
+         * String alias = credential.getUserName(); if (trace) { log.trace("alias = " + alias); } if (StringUtil.isNullOrEmpty(alias)) { identity =
+         * unauthenticatedIdentity; log.trace("Authenticating as unauthenticatedIdentity=" + identity); } if (trace) { log.trace("identity = " + identity); } if
+         * (identity == null) { if (credential.getCertificate() != null || (!trustedHeaderLogin && !jwtHeaderLogin)) { if
+         * (!validateCertificateCredential(credential)) { log.debug("Bad credential for alias=" + credential.getUserName()); throw new
+         * CredentialException("Validation of credential failed"); } }
+         *
+         * if (!jwtHeaderLogin || credential.getJwtToken() == null) { try { identity = new
+         * DatawavePrincipal(datawaveUserService.lookup(credential.getEntities())); } catch (AuthorizationException e) { Throwable cause = e.getCause(); String
+         * message = cause != null ? cause.getMessage() : e.getMessage(); log.debug("Failing login due to datawave user service exception " + e.getMessage(),
+         * e); // should result in a SERVICE_UNAVAILABLE (503) response code in DatawaveAuthenticationMechanism.sendChallenge throw new
+         * LoginException("Unable to authenticate: " + message); } catch (Exception e) { log.debug("Failing login due to datawave user service exception " +
+         * e.getMessage(), e); // should result in a SERVICE_UNAVAILABLE (503) response code in DatawaveAuthenticationMechanism.sendChallenge throw new
+         * LoginException("Unable to authenticate: " + e.getMessage()); } } else { try { identity = new
+         * DatawavePrincipal(jwtTokenHandler.createUsersFromToken(credential.getJwtToken())); } catch (Exception e) {
+         * log.debug("Failing login due to JWT token exception " + e.getMessage(), e); // should result in an UNAUTHORIZED (401) response code in
+         * DatawaveAuthenticationMechanism.sendChallenge throw new CredentialException("Unable to authenticate: " + e.getMessage()); } } } if
+         * (getUseFirstPass()) { sharedState.put("javax.security.auth.login.name", alias); sharedState.put("javax.security.auth.login.password",
+         * credential.getCertificate()); }
+         */
         if (trace) {
             log.trace("exit: validateCredential");
         }
         return true;
     }
-    
+
     protected boolean validateCertificateCredential(DatawaveCredential credential) {
         if (trace) {
             log.trace("enter: validateCertificateCredential(DatawaveCredential)[" + verifier + "]");
@@ -413,5 +383,5 @@ public class DatawavePrincipalSecurityRealm implements SecurityRealm {
         }
         return isValid;
     }
-  
+
 }
