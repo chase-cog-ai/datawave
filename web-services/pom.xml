@@ -27,6 +27,7 @@
         <module>model</module>
         <module>dictionary</module>
         <module>annotations</module>
+        <module>security/security-module</module>
     </modules>
     <properties>
         <accumulo.scope>provided</accumulo.scope>

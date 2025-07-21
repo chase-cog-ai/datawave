@@ -558,6 +558,26 @@
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
                             <!--
+                            Copy the datawave security jar to a known place so we can deploy it to Wildfly in the setup script.
+                            -->
+                            <execution>
+                                <id>copy-security-jar</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/wildfly/elyton</outputDirectory>
+                                    <overWriteIfNewer>true</overWriteIfNewer>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>gov.nsa.datawave.webservices</groupId>
+                                            <artifactId>datawave-ws-security</artifactId>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                            <!--
                                 Copy the MySQL connector jar to a known place so we can deploy it to Wildfly in the setup script.
                             -->
                             <execution>
