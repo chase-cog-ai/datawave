@@ -12,7 +12,7 @@ embed-server --server-config=standalone-full.xml
 module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.api --resources=mysql/mysql-connector-j-${version.mysql-connector}.jar
 
 # Add a module containing custom elytron components
-module add --name=gov.nsa.datawave.datawave-ws-security --resources=
+module add --name=gov.nsa.datawave.elytron --resources=elytron/datawave-ws-security-${project.version}.jar
 
 # Remove the metrics subsystem since it is currently buggy (thread-safety issue) and can cause deployment failures
 # See WFLY-11801 for details.
@@ -175,17 +175,36 @@ module add --name=datawave.custom.components --resources=datawave/datawave-ws-se
 #
 # Configure SSL (Elytron)
 #
+
 # Create the server key store.
-/subsystem=elytron/key-store=serverKeyStore:add(path=${KEYSTORE},credential-reference={clear-text="${KEYSTORE_PASSWORD}"},type=${KEYSTORE_TYPE})
+/subsystem=elytron/key-store=serverKeyStore:add( \
+  path=${KEYSTORE}, \
+  credential-reference={clear-text="${KEYSTORE_PASSWORD}"}, \
+  type=${KEYSTORE_TYPE})
+
 # Create the server key manager.
-/subsystem=elytron/key-manager=serverKeyManager:add(key-store=serverKeyStore,credential-reference={clear-text=${KEYSTORE_PASSWORD})
+/subsystem=elytron/key-manager=serverKeyManager:add( \
+  key-store=serverKeyStore, \
+  credential-reference={clear-text=${KEYSTORE_PASSWORD})
+
 # Create the server trust store.
-/subsystem=elytron/key-store=serverTrustStore:add(path=${TRUSTSTORE},credential-reference={clear-text="${TRUSTSTORE_PASSWORD}"},type=${TRUSTSTORE_TYPE})
+/subsystem=elytron/key-store=serverTrustStore:add( \
+  path=${TRUSTSTORE}, \
+  credential-reference={clear-text="${TRUSTSTORE_PASSWORD}"}, \
+  type=${TRUSTSTORE_TYPE})
+
 # Create the server trust manager.
-/subsystem=elytron/trust-manager=serverTrustManager:add(key-store=serverTrustStore)
+/subsystem=elytron/trust-manager=serverTrustManager:add( \
+  key-store=serverTrustStore)
+
 # Create the server SSL context. The protocols "TLSv1.1" and "TLSv1.2" will be supported, a client certificate will be required on an SSL handshake, and the
 # security-domain 'datawave' will be used for authentication during the SSL session establishment.
-/subsystem=elytron/server-ssl-context=serverSSLContext:add(key-manager=serverKeyManager,trust-manager=serverTrustManager,protocols=["TLSv1.1","TLSv1.2"],need-client-auth=true,security-domain=datawave)
+/subsystem=elytron/server-ssl-context=serverSSLContext:add( \
+  key-manager=serverKeyManager, \
+  trust-manager=serverTrustManager, \
+  protocols=["TLSv1.1","TLSv1.2"], \
+  need-client-auth=true, \
+  security-domain=datawave)
 
 #
 # Configure datawave security domain (legacy)
@@ -217,9 +236,14 @@ module add --name=datawave.custom.components --resources=datawave/datawave-ws-se
 #       ':' delimited list of roles that must be present if the client is a terminal server
 /subsystem/elytron/custom-realm=datawaveRealm:add( \
   class-name=datawave.security.realm.DatawavePrincipalSecurityRealm, \
-  module=
-  configuration={verifier=datawave.security.login.DatawaveCertVerifier,ocspLevel=off,allowUserProxying=false,trustedHeaderLogin="${dw.trusted.header.authentication:false}"},module=datawave.custom.components)
-/subsystem=elytron/security-domain=datawave:add(default-realm=cachedKsRealm,realms=[datawaveRealm])
+  module=datawave.custom.components \
+  configuration={ \
+    verifier=datawave.security.login.DatawaveCertVerifier, \
+    ocspLevel=off, \
+    allowUserProxying=false, \
+    trustedHeaderLogin="${dw.trusted.header.authentication:false}" \
+  })
+/subsystem=elytron/security-domain=datawave:add(default-realm=datawaveRealm,realms=[datawaveRealm])
 
 # Configure JmsXA realm (legacy)
 #/subsystem=security/security-domain=JmsXARealm:add(cache-type=default)
@@ -240,7 +264,7 @@ module add --name=datawave.custom.components --resources=datawave/datawave-ws-se
 # /subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=security-realm,value=SSLRealm)
 
 # Switch https-listener from the legacy security-realm to the Elytron server ssl context.
-/subsystem=undertow/server=default-server/https-listener=https:undefine-attribute(name=security-realm)
+/subsystem=undertow/server=default-server/https-listener=https/:undefine-attribute(name=security-realm)
 /subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=ssl-context,value=serverSSLContext)
 
 /subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=verify-client,value=REQUESTED)
@@ -318,6 +342,10 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 /subsystem=logging/logger=datawave.security:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=org.jboss.security.auth:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=org.jboss.security.authorization.modules.ejb.EJBPolicyModuleDelegate:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
+/subsystem=logging/logger=org.wildfly.security:add(use-parent-handers=false,handlers=["SECURITY_LOG"])
+/subsystem=logging/logger=org.wildfly.security.tls:add(use-parent-handers=false,handlers=["SECURITY_LOG"])
+/subsystem=logging/logger=org.wildfly.extension.elytron:add(use-parent-handers=false,handlers=["SECURITY_LOG"])
+/subsystem=logging/logger=javax.security.sasl:add(use-parent-handers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=datawave.webservice.modification:add(use-parent-handlers=false,handlers=["MODIFICATION_LOG"])
 /subsystem=logging/logger=datawave.webservice.query.distributed:add(use-parent-handlers=false,handlers=["DISTRIBUTED_QUERY_LOG"])
 /subsystem=logging/logger=org.jboss.resteasy.core:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])

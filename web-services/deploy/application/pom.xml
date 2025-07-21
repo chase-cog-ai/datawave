@@ -567,7 +567,7 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <outputDirectory>${project.build.directory}/wildfly/elyton</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/wildfly/elytron</outputDirectory>
                                     <overWriteIfNewer>true</overWriteIfNewer>
                                     <artifactItems>
                                         <artifactItem>
