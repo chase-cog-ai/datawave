@@ -11,8 +11,8 @@ embed-server --server-config=standalone-full.xml
 # Add the MySQL Connector as a module
 module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.api --resources=mysql/mysql-connector-j-${version.mysql-connector}.jar
 
-# Add a module containing custom elytron components
-module add --name=gov.nsa.datawave.elytron --resources=elytron/datawave-ws-security-${project.version}.jar
+# Add a module containing custom datawave elytron components.
+module add --name=gov.nsa.datawave.elytron --dependencies= --resources=elytron/datawave-ws-security-${project.version}.jar
 
 # Remove the metrics subsystem since it is currently buggy (thread-safety issue) and can cause deployment failures
 # See WFLY-11801 for details.
@@ -151,11 +151,6 @@ module add --name=gov.nsa.datawave.elytron --resources=elytron/datawave-ws-secur
 
 /system-property=jexl.function.namespace.registry:add(value="datawave.query.jexl.functions.JexlFunctionNamespaceRegistry.class")
 
-
-# Add a module containing custom wildfly components.
-# todo update once module is configured correctly to deploy along with ear
-module add --name=datawave.custom.components --resources=datawave/datawave-ws-security-{version.datawave}.jar
-
 #
 # Add cache container for the security realm
 #
@@ -185,7 +180,7 @@ module add --name=datawave.custom.components --resources=datawave/datawave-ws-se
 # Create the server key manager.
 /subsystem=elytron/key-manager=serverKeyManager:add( \
   key-store=serverKeyStore, \
-  credential-reference={clear-text=${KEYSTORE_PASSWORD})
+  credential-reference={clear-text="${KEYSTORE_PASSWORD}"})
 
 # Create the server trust store.
 /subsystem=elytron/key-store=serverTrustStore:add( \
@@ -203,7 +198,7 @@ module add --name=datawave.custom.components --resources=datawave/datawave-ws-se
   key-manager=serverKeyManager, \
   trust-manager=serverTrustManager, \
   protocols=["TLSv1.1","TLSv1.2"], \
-  need-client-auth=true, \
+  want-client-auth=true, \
   security-domain=datawave)
 
 #
@@ -216,7 +211,7 @@ module add --name=datawave.custom.components --resources=datawave/datawave-ws-se
 #/subsystem=security/security-domain=datawave/authentication=classic/login-module=Datawave:add(code=datawave.security.login.DatawavePrincipalLoginModule,flag=required,module-options={principalClass=datawave.security.authorization.DatawavePrincipal,verifier=datawave.security.login.DatawaveCertVerifier,ocspLevel=off,allowUserProxying=false,trustedHeaderLogin="${dw.trusted.header.authentication:false}"})
 #/subsystem=security/security-domain=datawave/jsse=classic:add(keystore={type="${KEYSTORE_TYPE}",password="${KEYSTORE_PASSWORD}",url="file://${KEYSTORE}"},truststore={type="${TRUSTSTORE_TYPE}",password="${TRUSTSTORE_PASSWORD}",url="file://${TRUSTSTORE}"})
 
-#
+#data
 # Configure datawave security domain (elytron)
 #
 
@@ -234,16 +229,16 @@ module add --name=datawave.custom.components --resources=datawave/datawave-ws-se
 #       ':' delimited list of roles that either all entities in the call chain must contain at least one of, or else the required roles will not be retained for the final identity.
 # - directRoles=LIST (optional, default="AuthorizedServer:AuthorizedQueryServer")
 #       ':' delimited list of roles that must be present if the client is a terminal server
-/subsystem/elytron/custom-realm=datawaveRealm:add( \
+/subsystem=elytron/custom-realm=datawaveRealm:add( \
   class-name=datawave.security.realm.DatawavePrincipalSecurityRealm, \
-  module=datawave.custom.components \
+  module="gov.nsa.datawave.elytron", \
   configuration={ \
-    verifier=datawave.security.login.DatawaveCertVerifier, \
-    ocspLevel=off, \
-    allowUserProxying=false, \
-    trustedHeaderLogin="${dw.trusted.header.authentication:false}" \
+    verifier="datawave.security.login.DatawaveCertVerifier", \
+    ocspLevel="off", \
+    allowUserProxying="false", \
+    trustedHeaderLogin="${trusted.header.login}" \
   })
-/subsystem=elytron/security-domain=datawave:add(default-realm=datawaveRealm,realms=[datawaveRealm])
+/subsystem=elytron/security-domain=datawave:add(default-realm=datawaveRealm,realms=[{realm=datawaveRealm}])
 
 # Configure JmsXA realm (legacy)
 #/subsystem=security/security-domain=JmsXARealm:add(cache-type=default)
@@ -266,8 +261,6 @@ module add --name=datawave.custom.components --resources=datawave/datawave-ws-se
 # Switch https-listener from the legacy security-realm to the Elytron server ssl context.
 /subsystem=undertow/server=default-server/https-listener=https/:undefine-attribute(name=security-realm)
 /subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=ssl-context,value=serverSSLContext)
-
-/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=verify-client,value=REQUESTED)
 
 #
 # Set up ActiveMQ, JMS Topics/Queues/DLQs
@@ -342,10 +335,10 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 /subsystem=logging/logger=datawave.security:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=org.jboss.security.auth:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=org.jboss.security.authorization.modules.ejb.EJBPolicyModuleDelegate:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
-/subsystem=logging/logger=org.wildfly.security:add(use-parent-handers=false,handlers=["SECURITY_LOG"])
-/subsystem=logging/logger=org.wildfly.security.tls:add(use-parent-handers=false,handlers=["SECURITY_LOG"])
-/subsystem=logging/logger=org.wildfly.extension.elytron:add(use-parent-handers=false,handlers=["SECURITY_LOG"])
-/subsystem=logging/logger=javax.security.sasl:add(use-parent-handers=false,handlers=["SECURITY_LOG"])
+/subsystem=logging/logger=org.wildfly.security:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
+/subsystem=logging/logger=org.wildfly.security.tls:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
+/subsystem=logging/logger=org.wildfly.extension.elytron:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
+/subsystem=logging/logger=javax.security.sasl:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=datawave.webservice.modification:add(use-parent-handlers=false,handlers=["MODIFICATION_LOG"])
 /subsystem=logging/logger=datawave.webservice.query.distributed:add(use-parent-handlers=false,handlers=["DISTRIBUTED_QUERY_LOG"])
 /subsystem=logging/logger=org.jboss.resteasy.core:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
