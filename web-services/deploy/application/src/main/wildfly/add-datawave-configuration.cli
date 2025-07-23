@@ -9,10 +9,10 @@ batch
 embed-server --server-config=standalone-full.xml
 
 # Add the MySQL Connector as a module
-module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.api --resources=mysql/mysql-connector-j-${version.mysql-connector}.jar
+module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.api,com.fasterxml.jackson.core.jackson-core --resources=mysql/mysql-connector-j-${version.mysql-connector}.jar
 
 # Add a module containing custom datawave elytron components.
-module add --name=gov.nsa.datawave.elytron --dependencies= --resources=elytron/datawave-ws-security-${project.version}.jar
+module add --name=gov.nsa.datawave.elytron --dependencies=org.apache.log4j,org.wildfly.security.elytron,org.wildfly.extension.elytron --resources=elytron/datawave-ws-security-${project.version}.jar
 
 # Remove the metrics subsystem since it is currently buggy (thread-safety issue) and can cause deployment failures
 # See WFLY-11801 for details.
