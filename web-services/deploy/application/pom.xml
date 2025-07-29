@@ -567,12 +567,31 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <outputDirectory>${project.build.directory}/wildfly/elytron</outputDirectory>
-                                    <overWriteIfNewer>true</overWriteIfNewer>
+                                    <outputDirectory>${project.build.directory}/wildfly/overlay/modules/datawave/elytron/main</outputDirectory>
                                     <artifactItems>
                                         <artifactItem>
                                             <groupId>gov.nsa.datawave.webservices</groupId>
                                             <artifactId>datawave-ws-security</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>gov.nsa.datawave.webservices</groupId>
+                                            <artifactId>datawave-ws-common</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>com.fasterxml.jackson.datatype</groupId>
+                                            <artifactId>jackson-datatype-guava</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>com.fasterxml.jackson.module</groupId>
+                                            <artifactId>jackson-module-jaxb-annotations</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>gov.nsa.datawave.microservice</groupId>
+                                            <artifactId>authorization-api</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>gov.nsa.datawave.core</groupId>
+                                            <artifactId>common-utils</artifactId>
                                         </artifactItem>
                                     </artifactItems>
                                 </configuration>

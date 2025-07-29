@@ -79,6 +79,9 @@ public class DatawavePrincipalSecurityRealm implements SecurityRealm {
     private JWTTokenHandler jwtTokenHandler;
     private boolean trace;
 
+    private Map<String,String> config;
+    private boolean postInitialized = false;
+
     public DatawavePrincipalSecurityRealm() {
         log = Logger.getLogger(getClass());
     }
@@ -90,6 +93,10 @@ public class DatawavePrincipalSecurityRealm implements SecurityRealm {
      *            the configuration
      */
     public void initialize(Map<String,String> config) {
+        this.config = config;
+    }
+
+    private void postInitialize() {
         trace = log.isTraceEnabled();
         if (trace) {
             log.trace("enter: initialize(Map): config=" + config);
@@ -107,6 +114,8 @@ public class DatawavePrincipalSecurityRealm implements SecurityRealm {
         if (trace) {
             log.trace("exit: initialize(Map)" + config);
         }
+
+        postInitialized = true;
     }
 
     /**
@@ -114,7 +123,11 @@ public class DatawavePrincipalSecurityRealm implements SecurityRealm {
      */
     protected void performFieldInjection() {
         if (datawaveUserService == null) {
-            BeanProvider.injectFields(this);
+            try {
+                BeanProvider.injectFields(this);
+            } catch (Exception e) {
+                log.trace("Failed to inject fields", e);
+            }
         }
     }
 
@@ -257,6 +270,10 @@ public class DatawavePrincipalSecurityRealm implements SecurityRealm {
 
     @Override
     public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
+        if (!postInitialized) {
+            postInitialize();
+        }
+
         if (trace) {
             log.trace("enter: getRealmIdentity(Principal): principal=" + principal);
         }

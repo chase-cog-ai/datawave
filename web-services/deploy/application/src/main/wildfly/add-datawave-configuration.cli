@@ -12,7 +12,7 @@ embed-server --server-config=standalone-full.xml
 module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.api,com.fasterxml.jackson.core.jackson-core --resources=mysql/mysql-connector-j-${version.mysql-connector}.jar
 
 # Add a module containing custom datawave elytron components.
-module add --name=gov.nsa.datawave.elytron --dependencies=org.apache.log4j,org.wildfly.security.elytron,org.wildfly.extension.elytron --resources=elytron/datawave-ws-security-${project.version}.jar
+# module add --name=datawave.elytron --dependencies=org.apache.log4j,org.wildfly.security.elytron,org.wildfly.extension.elytron,com.fasterxml.jackson.core.jackson-core,com.fasterxml.jackson.core.jackson-databind,com.fasterxml.jackson.datatype.jackson-datatype-guava --resources=elytron/datawave-ws-security-${project.version}.jar
 
 # Remove the metrics subsystem since it is currently buggy (thread-safety issue) and can cause deployment failures
 # See WFLY-11801 for details.
@@ -220,7 +220,7 @@ module add --name=gov.nsa.datawave.elytron --dependencies=org.apache.log4j,org.w
 # - verifier=STRING (optional, default=null)
 #       The class name of an org.jboss.security.auths.certs.X509CertificateVerifier that will be
 # - ocspLevel=STRING (optional, default=null)
-#       Sets the oscp level of the verifier. Required when the verifier is datawave.security.login.DatawaveCertVerifier.
+#       Sets the oscp level of the verifier. Required when the verifier is datawave.security.realm.DatawaveCertVerifier.
 # - trustedHeaderLogin=BOOLEAN (optional, default=false)
 #       When set to true, the client certificate will not be validated, and will be treated as a valid certificate.
 # - jwtHeaderLogin=BOOLEAN (optional, default=false)
@@ -231,9 +231,9 @@ module add --name=gov.nsa.datawave.elytron --dependencies=org.apache.log4j,org.w
 #       ':' delimited list of roles that must be present if the client is a terminal server
 /subsystem=elytron/custom-realm=datawaveRealm:add( \
   class-name=datawave.security.realm.DatawavePrincipalSecurityRealm, \
-  module="gov.nsa.datawave.elytron", \
+  module="datawave.elytron", \
   configuration={ \
-    verifier="datawave.security.login.DatawaveCertVerifier", \
+    verifier="datawave.security.realm.DatawaveCertVerifier", \
     ocspLevel="off", \
     allowUserProxying="false", \
     trustedHeaderLogin="${trusted.header.login}" \
@@ -338,6 +338,7 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 /subsystem=logging/logger=org.wildfly.security:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=org.wildfly.security.tls:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=org.wildfly.extension.elytron:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
+/subsystem=logging/logger=javax.security.sasl:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=javax.security.sasl:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=datawave.webservice.modification:add(use-parent-handlers=false,handlers=["MODIFICATION_LOG"])
 /subsystem=logging/logger=datawave.webservice.query.distributed:add(use-parent-handlers=false,handlers=["DISTRIBUTED_QUERY_LOG"])
