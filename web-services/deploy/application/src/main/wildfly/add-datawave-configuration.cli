@@ -230,15 +230,16 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 # - directRoles=LIST (optional, default="AuthorizedServer:AuthorizedQueryServer")
 #       ':' delimited list of roles that must be present if the client is a terminal server
 /subsystem=elytron/custom-realm=datawaveRealm:add( \
-  class-name=datawave.security.realm.DatawavePrincipalSecurityRealm, \
-  module="datawave.elytron", \
-  configuration={ \
-    verifier="datawave.security.realm.DatawaveCertVerifier", \
-    ocspLevel="off", \
-    allowUserProxying="false", \
-    trustedHeaderLogin="${trusted.header.login}" \
-  })
-/subsystem=elytron/security-domain=datawave:add(default-realm=datawaveRealm,realms=[{realm=datawaveRealm}])
+    class-name=datawave.security.realm.DatawavePrincipalSecurityRealm, \
+    module="datawave.elytron", \
+    configuration={ \
+        verifier="datawave.security.realm.DatawaveCertVerifier", \
+        ocspLevel="off", \
+        allowUserProxying="false", \
+        trustedHeaderLogin="${trusted.header.login}"})
+/subsystem=elytron/caching-realm=cachedDatawaveRealm:add( \
+    realm=datawaveRealm)
+/subsystem=elytron/security-domain=datawave:add(default-realm=cachedDatawaveRealm,realms=[{realm=cachedDatawaveRealm}])
 
 # Configure JmsXA realm (legacy)
 #/subsystem=security/security-domain=JmsXARealm:add(cache-type=default)
