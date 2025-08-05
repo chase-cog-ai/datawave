@@ -22,7 +22,7 @@ import datawave.security.ssl.SSLContextInfoImpl;
 public class SecurityDomainProducer {
 
     private static final Logger log = Logger.getLogger(SecurityDomainProducer.class);
-    
+
     @Resource(name = "java:jboss/jaas/datawave")
     private AuthenticationManager authenticationManager;
 
