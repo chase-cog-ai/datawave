@@ -18,7 +18,6 @@
     <dependencies>
         <module name="javax.api"/>
         <module name="org.apache.commons.collections"/>
-        <module name="org.apache.commons.lang"/>
         <module name="org.apache.commons.lang3"/>
         <module name="org.apache.commons.logging"/>
         <module name="com.google.guava"/>
