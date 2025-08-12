@@ -15,6 +15,7 @@ import javax.inject.Inject;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.X509KeyManager;
 
+import org.apache.deltaspike.core.api.provider.BeanProvider;
 import org.apache.log4j.Logger;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.callback.CredentialCallback;
@@ -30,7 +31,6 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 
-import datawave.configuration.spring.BeanProvider;
 import datawave.security.SSLContextInfo;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUserService;
@@ -374,7 +374,7 @@ public class DatawavePrincipalSecurityRealm implements SecurityRealm {
         if (verifier != null) {
             String issuerSubjectDn = credential.getCertificate().getIssuerX500Principal().getName();
             if (usingDatawaveVerifier) {
-                if (((datawave.security.login.DatawaveCertVerifier) verifier).isIssuerSupported(issuerSubjectDn, trustStore)) {
+                if (((DatawaveCertVerifier) verifier).isIssuerSupported(issuerSubjectDn, trustStore)) {
                     isValid = verifier.verify(credential.getCertificate(), issuerSubjectDn, keyStore, trustStore);
                 } else {
                     if (trace) {

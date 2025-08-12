@@ -64,5 +64,4 @@ public class DatawaveCertVerifier implements X509CertificateVerifier {
                 break;
         }
     }
-
 }

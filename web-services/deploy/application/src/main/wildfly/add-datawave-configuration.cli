@@ -211,7 +211,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 #/subsystem=security/security-domain=datawave/authentication=classic/login-module=Datawave:add(code=datawave.security.login.DatawavePrincipalLoginModule,flag=required,module-options={principalClass=datawave.security.authorization.DatawavePrincipal,verifier=datawave.security.login.DatawaveCertVerifier,ocspLevel=off,allowUserProxying=false,trustedHeaderLogin="${dw.trusted.header.authentication:false}"})
 #/subsystem=security/security-domain=datawave/jsse=classic:add(keystore={type="${KEYSTORE_TYPE}",password="${KEYSTORE_PASSWORD}",url="file://${KEYSTORE}"},truststore={type="${TRUSTSTORE_TYPE}",password="${TRUSTSTORE_PASSWORD}",url="file://${TRUSTSTORE}"})
 
-#data
+#
 # Configure datawave security domain (elytron)
 #
 
@@ -231,7 +231,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 #       ':' delimited list of roles that must be present if the client is a terminal server
 /subsystem=elytron/custom-realm=datawaveRealm:add( \
     class-name=datawave.security.realm.DatawavePrincipalSecurityRealm, \
-    module="datawave.elytron", \
+    module="datawave.security.elytron", \
     configuration={ \
         verifier="datawave.security.realm.DatawaveCertVerifier", \
         ocspLevel="off", \

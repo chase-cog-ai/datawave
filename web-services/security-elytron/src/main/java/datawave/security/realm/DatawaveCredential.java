@@ -23,9 +23,8 @@ public class DatawaveCredential implements Credential, Comparable<DatawaveCreden
     private String jwtToken;
 
     /**
-     * Constructs a {@link datawave.security.auth.DatawaveCredential} using only DN information. This means there is no supplied certificate, and this
-     * credential will only be trusted if the {@link datawave.security.login.DatawavePrincipalLoginModule} is configured with trusted header login (i.e., it is
-     * configured to trust the incoming DN information without a supplied certificate).
+     * Constructs a {@link DatawaveCredential} using only DN information. This means there is no supplied certificate, and this credential will only be trusted
+     * if the {@link } is configured with trusted header login (i.e., it is configured to trust the incoming DN information without a supplied certificate).
      *
      * @param subjectDN
      *            the subject DN of the calling entity's certificate
@@ -41,7 +40,7 @@ public class DatawaveCredential implements Credential, Comparable<DatawaveCreden
     }
 
     /**
-     * Constructs a {@link datawave.security.auth.DatawaveCredential} using a certificate. The certificate is fully trusted to identify the calling entity.
+     * Constructs a {@link DatawaveCredential} using a certificate. The certificate is fully trusted to identify the calling entity.
      *
      * @param certificate
      *            the {@link X509Certificate} that represents the calling entity

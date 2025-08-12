@@ -31,7 +31,6 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.deltaspike.core.api.jmx.MBean;
-import org.jboss.security.CacheableManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +42,7 @@ import datawave.security.authorization.CachedDatawaveUserService;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUserInfo;
+import datawave.security.realm.DatawaveRealmIdentityCache;
 import datawave.security.system.AuthorizationCache;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.exception.QueryException;
@@ -70,7 +70,7 @@ public class CredentialsCacheBean {
 
     @Inject
     @AuthorizationCache
-    private CacheableManager<?,Principal> authManager;
+    private DatawaveRealmIdentityCache identityCache;
 
     @Inject
     private Instance<CachedDatawaveUserService> cachedDatawaveUserServiceInstance;
@@ -104,7 +104,7 @@ public class CredentialsCacheBean {
     public String flushAll() {
         try {
             // Remove principals from the Wildfly cached authentication manager, if we have one in use.
-            authManager.flushCache();
+            identityCache.clear();
             if (!cachedDatawaveUserServiceInstance.isUnsatisfied()) {
                 cachedDatawaveUserServiceInstance.get().evictAll();
             }
@@ -138,12 +138,12 @@ public class CredentialsCacheBean {
         }
         // @formatter:off
         // Flush all principals from the Wildfly cache if the getName() of any of the contained DatawaveUser objects matches the supplied DN.
-        authManager.getCachedKeys().parallelStream()
+        identityCache.getPrincipals().parallelStream()
                 .filter(p -> p instanceof DatawavePrincipal)
                 .filter(p -> ((DatawavePrincipal) p).getProxiedUsers().stream().anyMatch(u -> u.getName().equals(dn)))
                 .forEach(p -> {
                     log.debug("Evicting {} from the Wildfly authentication cache.", p);
-                    authManager.flushCache(p);
+                    identityCache.remove(p);
                 });
         // @formatter:on
         return result;
@@ -168,7 +168,7 @@ public class CredentialsCacheBean {
             result = new DnList(cachedDatawaveUserServiceInstance.get().listAll());
         } else {
             // @formatter:off
-            Set<DatawaveUserInfo> userList = authManager.getCachedKeys().parallelStream()
+            Set<DatawaveUserInfo> userList = identityCache.getPrincipals().parallelStream()
                     .filter(p -> p instanceof DatawavePrincipal)
                     .flatMap(p -> ((DatawavePrincipal) p).getProxiedUsers().stream())
                     .map(DatawaveUserInfo::new)
@@ -195,7 +195,7 @@ public class CredentialsCacheBean {
         if (!cachedDatawaveUserServiceInstance.isUnsatisfied()) {
             result = new DnList(cachedDatawaveUserServiceInstance.get().listMatching(substr));
         } else {
-            Set<Principal> principals = authManager.getCachedKeys();
+            Set<Principal> principals = identityCache.getPrincipals();
             // @formatter:off
             Set<DatawaveUserInfo> userList = principals.parallelStream()
                     .filter(p -> p instanceof DatawavePrincipal)
@@ -227,7 +227,7 @@ public class CredentialsCacheBean {
             user = cachedDatawaveUserServiceInstance.get().list(dn);
         } else {
             // @formatter:off
-            user = authManager.getCachedKeys().parallelStream()
+            user = identityCache.getPrincipals().parallelStream()
                     .filter(p -> p instanceof DatawavePrincipal)
                     .flatMap(p -> ((DatawavePrincipal) p).getProxiedUsers().stream())
                     .filter(p -> p.getName().equals(dn))

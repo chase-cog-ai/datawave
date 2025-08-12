@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,7 +20,6 @@ import javax.inject.Inject;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.security.CacheableManager;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
@@ -29,6 +27,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.wildfly.security.auth.server.RealmIdentity;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -42,6 +41,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.realm.DatawaveRealmIdentityCache;
 import datawave.security.system.AuthorizationCache;
 
 @RunWith(Arquillian.class)
@@ -50,9 +50,9 @@ public class CredentialsCacheBeanTest {
     private CredentialsCacheBean ccb;
 
     @Inject
-    private CacheableManager<Object,Principal> authManager;
+    private DatawaveRealmIdentityCache realmIdentityCache;
 
-    private Cache<Principal,Principal> cache;
+    private Cache<Principal,RealmIdentity> cache;
 
     @Deployment
     public static JavaArchive createDeployment() {
@@ -76,9 +76,6 @@ public class CredentialsCacheBeanTest {
         ccb = new CredentialsCacheBean();
         BeanProvider.injectFields(ccb);
 
-        cache = CacheBuilder.newBuilder().build();
-        authManager.setCache(cache);
-
         DatawaveUser u1 = new DatawaveUser(SubjectIssuerDNPair.of("user1", "issuer1"), UserType.USER, null, null, null, -1);
         DatawaveUser u2 = new DatawaveUser(SubjectIssuerDNPair.of("user2", "issuer2"), UserType.USER, null, null, null, -1);
         DatawaveUser s1 = new DatawaveUser(SubjectIssuerDNPair.of("server1", "issuer1"), UserType.SERVER, null, null, null, -1);
@@ -87,31 +84,33 @@ public class CredentialsCacheBeanTest {
         DatawavePrincipal dp2 = new DatawavePrincipal(Collections.singleton(u1));
         DatawavePrincipal dp3 = new DatawavePrincipal(Arrays.asList(u2, s1));
 
-        cache.put(dp1, dp1);
-        cache.put(dp2, dp2);
-        cache.put(dp3, dp3);
+        realmIdentityCache.put(dp1, RealmIdentity.ANONYMOUS);
+        realmIdentityCache.put(dp2, RealmIdentity.ANONYMOUS);
+        realmIdentityCache.put(dp3, RealmIdentity.ANONYMOUS);
     }
 
     @After
-    public void tearDown() {}
+    public void tearDown() {
+        realmIdentityCache.clear();
+    }
 
     @Test
     public void testFlushAll() {
-        assertEquals(3, cache.size());
+        assertEquals(3, realmIdentityCache.getPrincipals().size());
 
         ccb.flushAll();
 
-        assertEquals(0, cache.size());
+        assertEquals(0, realmIdentityCache.getPrincipals().size());
     }
 
     @Test
     public void testEvict() {
-        Principal expected = cache.asMap().keySet().stream().filter(p -> p.getName().startsWith("user2")).findFirst().orElse(null);
-        assertNotNull(expected);
-        assertEquals(3, cache.size());
+        Principal principal = realmIdentityCache.getPrincipals().stream().filter(p -> p.getName().startsWith("user2")).findFirst().orElse(null);
+        assertNotNull(principal);
+        assertEquals(3, realmIdentityCache.getPrincipals().size());
         ccb.evict("user2<issuer2>");
-        assertNull(cache.getIfPresent(expected));
-        assertEquals(2, cache.size());
+        assertNull(realmIdentityCache.get(principal));
+        assertEquals(2, realmIdentityCache.getPrincipals().size());
     }
 
     @Test
@@ -140,34 +139,33 @@ public class CredentialsCacheBeanTest {
     @Default
     @ApplicationScoped
     @AuthorizationCache
-    private static class TestCacheableManager implements CacheableManager<Object,Principal> {
-        private Cache<Principal,Principal> cache;
+    private static class TestDatawaveRealmIdentityCache implements DatawaveRealmIdentityCache {
+
+        private final Cache<Principal,RealmIdentity> cache = CacheBuilder.newBuilder().build();
 
         @Override
-        public void setCache(Object o) {
-            // noinspection unchecked
-            cache = (Cache<Principal,Principal>) o;
+        public void put(Principal principal, RealmIdentity realmIdentity) {
+            cache.put(principal, realmIdentity);
         }
 
         @Override
-        public void flushCache() {
-            cache.invalidateAll();
-            cache.cleanUp();
-        }
-
-        @Override
-        public void flushCache(Principal principal) {
+        public void remove(Principal principal) {
             cache.invalidate(principal);
         }
 
         @Override
-        public boolean containsKey(Principal principal) {
-            return cache.getIfPresent(principal) != null;
+        public RealmIdentity get(Principal principal) {
+            return cache.getIfPresent(principal);
         }
 
         @Override
-        public Set<Principal> getCachedKeys() {
-            return new HashSet<>(cache.asMap().values());
+        public Set<Principal> getPrincipals() {
+            return cache.asMap().keySet();
+        }
+
+        @Override
+        public void clear() {
+            cache.invalidateAll();
         }
     }
 

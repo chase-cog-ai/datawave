@@ -3,9 +3,6 @@ package datawave.security.realm;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 
-/**
- * A verifier for X509Certificate used by authentication layers.
- */
 public interface X509CertificateVerifier {
 
     /**

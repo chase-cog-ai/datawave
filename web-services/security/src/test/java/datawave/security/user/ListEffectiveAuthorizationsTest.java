@@ -4,7 +4,6 @@ import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.security.Principal;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -16,7 +15,6 @@ import javax.enterprise.inject.Instance;
 
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
-import org.jboss.security.CacheableManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -40,6 +38,7 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.UserOperations;
 import datawave.security.cache.CredentialsCacheBean;
+import datawave.security.realm.DatawaveRealmIdentityCache;
 import datawave.security.system.AuthorizationCache;
 import datawave.user.AuthorizationsListBase;
 import datawave.user.DefaultAuthorizationsList;
@@ -51,7 +50,7 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
     private static ResponseObjectFactory mockResponseObjectFactory;
     private static EJBContext mockEJBContext;
     private static CredentialsCacheBean mockCredentialsCache;
-    private static CacheableManager<?,Principal> mockCacheManager;
+    private static DatawaveRealmIdentityCache mockRealmIdentityCache;
     private static Instance<CachedDatawaveUserService> mockCachedDatawaveUserService;
     private static AccumuloConnectionFactory mockAccumuloConnectionFactory;
     private static UserOperations mockRemoteUserOperations1;
@@ -61,7 +60,7 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
         mockResponseObjectFactory = EasyMock.createMock(ResponseObjectFactory.class);
         mockEJBContext = EasyMock.createMock(EJBContext.class);
         mockCredentialsCache = EasyMock.createMock(CredentialsCacheBean.class);
-        mockCacheManager = EasyMock.createMock(CacheableManager.class);
+        mockRealmIdentityCache = EasyMock.createMock(DatawaveRealmIdentityCache.class);
         mockCachedDatawaveUserService = EasyMock.createMock(Instance.class);
         mockAccumuloConnectionFactory = EasyMock.createMock(AccumuloConnectionFactory.class);
         mockRemoteUserOperations1 = EasyMock.createMock(UserOperations.class);
@@ -70,21 +69,21 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
     @Override
     public void replayAll() {
         super.replayAll();
-        EasyMock.replay(mockResponseObjectFactory, mockEJBContext, mockCredentialsCache, mockCacheManager, mockCachedDatawaveUserService,
+        EasyMock.replay(mockResponseObjectFactory, mockEJBContext, mockCredentialsCache, mockRealmIdentityCache, mockCachedDatawaveUserService,
                         mockAccumuloConnectionFactory, mockRemoteUserOperations1);
     }
 
     @Override
     public void verifyAll() {
         super.verifyAll();
-        EasyMock.verify(mockResponseObjectFactory, mockEJBContext, mockCredentialsCache, mockCacheManager, mockCachedDatawaveUserService,
+        EasyMock.verify(mockResponseObjectFactory, mockEJBContext, mockCredentialsCache, mockRealmIdentityCache, mockCachedDatawaveUserService,
                         mockAccumuloConnectionFactory, mockRemoteUserOperations1);
     }
 
     @Override
     public void resetAll() {
         super.resetAll();
-        EasyMock.reset(mockResponseObjectFactory, mockEJBContext, mockCredentialsCache, mockCacheManager, mockCachedDatawaveUserService,
+        EasyMock.reset(mockResponseObjectFactory, mockEJBContext, mockCredentialsCache, mockRealmIdentityCache, mockCachedDatawaveUserService,
                         mockAccumuloConnectionFactory, mockRemoteUserOperations1);
     }
 
@@ -123,8 +122,8 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
 
         @Bean
         @AuthorizationCache
-        public CacheableManager<?,Principal> authManager() {
-            return mockCacheManager;
+        public DatawaveRealmIdentityCache realmIdentityCache() {
+            return mockRealmIdentityCache;
         }
 
         @Bean

@@ -1,18 +1,18 @@
 package datawave.security.system;
 
 import java.security.Principal;
+import java.util.Set;
 
-import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Default;
 import javax.enterprise.inject.Produces;
 
 import org.apache.log4j.Logger;
-import org.jboss.security.AuthenticationManager;
-import org.jboss.security.CacheableManager;
+import org.wildfly.security.auth.server.RealmIdentity;
 
 
 import datawave.security.SSLContextInfo;
+import datawave.security.realm.DatawaveRealmIdentityCache;
 import datawave.security.ssl.SSLContextInfoImpl;
 
 /**
@@ -22,9 +22,6 @@ import datawave.security.ssl.SSLContextInfoImpl;
 public class SecurityDomainProducer {
 
     private static final Logger log = Logger.getLogger(SecurityDomainProducer.class);
-
-    @Resource(name = "java:jboss/jaas/datawave")
-    private AuthenticationManager authenticationManager;
 
     /**
      * Allow injection of an {@link SSLContextInfo} instance that is instantiated via system properties set via wildfly. This is intended to be the default way
@@ -46,8 +43,33 @@ public class SecurityDomainProducer {
 
     @Produces
     @AuthorizationCache
-    @SuppressWarnings("unchecked")
-    public CacheableManager<Object,Principal> produceAuthManager() {
-        return (authenticationManager instanceof CacheableManager) ? (CacheableManager<Object,Principal>) authenticationManager : null;
+    public DatawaveRealmIdentityCache produceRealmIdentityCache() {
+        // For now, return a no-op version until we can figure out the injection
+        return new DatawaveRealmIdentityCache() {
+            @Override
+            public void put(Principal principal, RealmIdentity realmIdentity) {
+
+            }
+
+            @Override
+            public void remove(Principal principal) {
+
+            }
+
+            @Override
+            public RealmIdentity get(Principal principal) {
+                return null;
+            }
+
+            @Override
+            public Set<Principal> getPrincipals() {
+                return Set.of();
+            }
+
+            @Override
+            public void clear() {
+
+            }
+        };
     }
 }

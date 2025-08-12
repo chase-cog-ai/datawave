@@ -13,6 +13,15 @@
         <!-- jkube kubernetes-maven-plugin only has access to project properties so we redefine them to properly render the Dockerfile-->
         <project.build.finalName>${project.build.finalName}</project.build.finalName>
     </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>gov.nsa.datawave.webservices</groupId>
+                <artifactId>datawave-ws-security-elytron</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>commons-configuration</groupId>
@@ -558,7 +567,7 @@
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
                             <!--
-                            Copy the datawave security jar to a known place so we can deploy it to Wildfly in the setup script.
+                            Copy the datawave security elytron jar and its dependency to the overlay module directory to ensure it's added as a Wildfly module.
                             -->
                             <execution>
                                 <id>copy-security-jar</id>
@@ -567,11 +576,11 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <outputDirectory>${project.build.directory}/wildfly/overlay/modules/datawave/elytron/main</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/wildfly/overlay/modules/datawave/security/elytron/main</outputDirectory>
                                     <artifactItems>
                                         <artifactItem>
                                             <groupId>gov.nsa.datawave.webservices</groupId>
-                                            <artifactId>datawave-ws-security</artifactId>
+                                            <artifactId>datawave-ws-security-elytron</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>gov.nsa.datawave.webservices</groupId>
