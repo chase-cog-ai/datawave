@@ -193,13 +193,13 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
   key-store=serverTrustStore)
 
 # Create the server SSL context. The protocols "TLSv1.1" and "TLSv1.2" will be supported, a client certificate will be required on an SSL handshake, and the
-# security-domain 'datawave' will be used for authentication during the SSL session establishment.
+# security-domain 'datawaveElytron' will be used for authentication during the SSL session establishment.
 /subsystem=elytron/server-ssl-context=serverSSLContext:add( \
   key-manager=serverKeyManager, \
   trust-manager=serverTrustManager, \
   protocols=["TLSv1.1","TLSv1.2"], \
   want-client-auth=true, \
-  security-domain=datawave)
+  security-domain=datawaveElytron)
 
 #
 # Configure datawave security domain (legacy)
@@ -237,7 +237,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
         ocspLevel="off", \
         allowUserProxying="false", \
         trustedHeaderLogin="${trusted.header.login}"})
-/subsystem=elytron/security-domain=datawave:add(default-realm=datawaveRealm,realms=[{realm=datawaveRealm}])
+/subsystem=elytron/security-domain=datawaveElytron:add(default-realm=datawaveRealm,realms=[{realm=datawaveRealm}])
 
 # Configure JmsXA realm (legacy)
 #/subsystem=security/security-domain=JmsXARealm:add(cache-type=default)
@@ -279,6 +279,7 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 #
 # EJB subsystem configuration
 #
+/subsystem=ejb3/application-security-domain=datawave:add(security-domain=datawaveElytron)
 /subsystem=ejb3/:write-attribute(name=in-vm-remote-interface-invocation-pass-by-value,value=false)
 /subsystem=ejb3/thread-pool=default/:write-attribute(name=max-threads,value=${jboss.ejb3.async.threads})
 /subsystem=ejb3/strict-max-bean-instance-pool=mdb-strict-max-pool/:undefine-attribute(name=derive-size)
