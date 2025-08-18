@@ -71,7 +71,7 @@ if [ "$CONFIG_STATUS" -ne 0 ]; then
     echo "Failed to deploy Datawave configuration to Wildfly. Please see $JBOSS_CONSOLE_LOG for details."
     exit 3
 fi
-rm -r $WILDFLY_HOME/standalone/log
+# rm -r $WILDFLY_HOME/standalone/log
 
 #
 # Copy the EAR to the deployment dir so it auto-deploys when Wildfly is started.
