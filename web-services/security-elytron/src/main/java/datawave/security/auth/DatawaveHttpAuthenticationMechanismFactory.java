@@ -1,6 +1,7 @@
 package datawave.security.auth;
 
 import org.apache.log4j.Logger;
+import org.wildfly.security.http.HttpConstants;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 
@@ -9,26 +10,27 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Factory to create instances of {@link DatawaveHttpAuthenticationMechanism}.
+ * A {@link HttpServerAuthenticationMechanismFactory} implementation to create instances of {@link DatawaveHttpAuthenticationMechanism} for the
+ * {@value #DATAWAVE_AUTH_NAME} mechanism.
  */
 public class DatawaveHttpAuthenticationMechanismFactory implements HttpServerAuthenticationMechanismFactory {
     
     private static final Logger log = Logger.getLogger(DatawaveHttpAuthenticationMechanismFactory.class);
     
-    public static final String MECHANISM_NAME = "DATAWAVE-AUTH";
+    public static final String DATAWAVE_AUTH_NAME = "DATAWAVE-AUTH";
     
     /**
-     * Returns the name of the HTTP authentication mechanism that can be supplied by this factory, specifically {@value #MECHANISM_NAME}.
+     * Returns the name of the HTTP authentication mechanism that can be supplied by this factory, specifically {@value #DATAWAVE_AUTH_NAME}.
      * @param properties the properties to pass configuration to the mechanisms that may be evaluated for mechanism availability.
-     * @return a single-element array containing the string {@value #MECHANISM_NAME}.
+     * @return a single-element array containing the string {@value #DATAWAVE_AUTH_NAME}.
      */
     @Override
     public String[] getMechanismNames(Map<String,?> properties) {
-        return new String[] { MECHANISM_NAME };
+        return new String[] {DATAWAVE_AUTH_NAME};
     }
     
     /**
-     * Returns an instance of {@link DatawaveHttpAuthenticationMechanism} if the mechanism name is {@value #MECHANISM_NAME}, otherwise returns null.
+     * Returns an instance of {@link DatawaveHttpAuthenticationMechanism} if the mechanism name is {@value #DATAWAVE_AUTH_NAME}, otherwise returns null.
      * @param mechanismName the mechanism name
      * @param properties the set of properties to select and configure the mechanism that may be evaluated for mechanism availability
      * @param callbackHandler the {@link CallbackHandler} for use by the mechanism during authentication
@@ -40,7 +42,7 @@ public class DatawaveHttpAuthenticationMechanismFactory implements HttpServerAut
         Objects.requireNonNull(properties, "properties must not be null");
         Objects.requireNonNull(callbackHandler, "callbackHandler must not be null");
         
-        if(MECHANISM_NAME.equals(mechanismName)) {
+        if(DATAWAVE_AUTH_NAME.equals(mechanismName)) {
             return new DatawaveHttpAuthenticationMechanism(callbackHandler);
         } else {
             if(log.isTraceEnabled()) {

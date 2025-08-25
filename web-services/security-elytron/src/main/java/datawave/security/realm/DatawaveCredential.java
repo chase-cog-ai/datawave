@@ -17,6 +17,7 @@ import datawave.security.util.DnUtils;
  * Elytron version of DatawaveCredential to utilize with credential callbacks.
  */
 public class DatawaveCredential implements Credential, Comparable<DatawaveCredential> {
+    
     private X509Certificate certificate;
     private String userName;
     private List<SubjectIssuerDNPair> entities = new ArrayList<>();
@@ -92,7 +93,7 @@ public class DatawaveCredential implements Credential, Comparable<DatawaveCreden
     }
 
     public void pruneEntities(Set<String> entitiesToPrune) {
-        Set<String> normalizedEntities = entitiesToPrune.stream().map(e -> e.toLowerCase()).collect(Collectors.toSet());
+        Set<String> normalizedEntities = entitiesToPrune.stream().map(String::toLowerCase).collect(Collectors.toSet());
         entities = entities.stream().filter(e -> !normalizedEntities.contains(e.subjectDN().toLowerCase())).collect(Collectors.toList());
         userName = DnUtils.buildNormalizedProxyDN(entities);
     }

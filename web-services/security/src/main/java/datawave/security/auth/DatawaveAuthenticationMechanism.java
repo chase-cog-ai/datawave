@@ -62,6 +62,7 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
      */
     private final boolean forceRenegotiation;
     private final IdentityManager identityManager;
+    
     protected final String SUBJECT_DN_HEADER;
     protected final String ISSUER_DN_HEADER;
     private final boolean trustedHeaderAuthentication;
