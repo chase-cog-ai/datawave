@@ -103,8 +103,8 @@ public class DatawavePrincipal implements ProxiedUserDetails, Principal, Seriali
         if (position >= 0) {
             users.add(datawaveUsers.get(position));
             if (datawaveUsers.size() > 1) {
-                datawaveUsers.stream().limit(position).forEach(u -> users.add(u));
-                datawaveUsers.stream().skip(position + 1).forEach(u -> users.add(u));
+                datawaveUsers.stream().limit(position).forEach(users::add);
+                datawaveUsers.stream().skip(position + 1).forEach(users::add);
             }
         }
         return users;

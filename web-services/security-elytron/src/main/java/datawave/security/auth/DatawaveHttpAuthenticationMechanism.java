@@ -1,7 +1,7 @@
 package datawave.security.auth;
 
 import datawave.security.evidence.JWTEvidence;
-import datawave.security.evidence.ProxiedX509PeerCertificateChainEvidence;
+import datawave.security.evidence.ProxiedX509CertificateEvidence;
 import datawave.security.evidence.PrunableEvidence;
 import datawave.security.evidence.TrustedHeaderEvidence;
 import datawave.security.util.ProxiedEntityUtils;
@@ -167,6 +167,7 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
                 authorizedFunction = cacheCallback::isAuthorized;
                 authorizeCallBack = cacheCallback;
             } else {
+                // likely don't want decoded principal here, unless we can guarantee a match?
                 PrincipalAuthorizeCallback principalCallback = new PrincipalAuthorizeCallback(evidence.getDecodedPrincipal());
                 authorizedFunction = principalCallback::isAuthorized;
                 authorizeCallBack = principalCallback;
@@ -220,7 +221,7 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
         }
     }
     
-    private Evidence getEvidence(HttpServerRequest request) throws MultipleHeaderException, MissingHeaderException {
+    private Evidence getEvidence(HttpServerRequest request) throws MultipleHeaderValuesException, MissingHeaderException {
         Evidence evidence = getJwtEvidence(request);
         if(evidence != null) {
             return evidence;
@@ -238,7 +239,7 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
         return getTrustedHeadersEvidence(request, proxiedEntities, proxiedIssuers);
     }
     
-    private Evidence getJwtEvidence(HttpServerRequest request) throws MultipleHeaderException {
+    private Evidence getJwtEvidence(HttpServerRequest request) throws MultipleHeaderValuesException {
         if(jwtHeaderAuthentication) {
             String authorizationHeader = getSingularHeaderValue(request, "Authorization");
             if(authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
@@ -249,7 +250,7 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
         return null;
     }
     
-    private Pair<String, String> getProxiedEntitiesAndIssuers(HttpServerRequest request) throws MultipleHeaderException, MissingHeaderException {
+    private Pair<String, String> getProxiedEntitiesAndIssuers(HttpServerRequest request) throws MultipleHeaderValuesException, MissingHeaderException {
         String proxiedEntities;
         String proxiedIssuers;
         proxiedEntities = getSingularHeaderValue(request, PROXIED_ENTITIES_HEADER);
@@ -271,13 +272,13 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
             Certificate[] peerCertificates = request.getPeerCertificates();
             X509Certificate[] x509Certificates = X500.asX509CertificateArray(peerCertificates);
             X509Certificate certificate = x509Certificates[0];
-            return new ProxiedX509PeerCertificateChainEvidence(certificate, proxiedEntities, proxiedIssuers);
+            return new ProxiedX509CertificateEvidence(certificate, proxiedEntities, proxiedIssuers);
         }
         return null;
     }
     
     private Evidence getTrustedHeadersEvidence(HttpServerRequest request, String proxiedEntities, String proxiedIssuers)
-                    throws MultipleHeaderException, MissingHeaderException {
+                    throws MultipleHeaderValuesException, MissingHeaderException {
         if (trustedHeaderAuthentication) {
             String subjectDn = getSingularHeaderValue(request, subjectDnHeader);
             String issuerDn = getSingularHeaderValue(request, issuerDnHeader);
@@ -305,13 +306,13 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
      * @param httpServerRequest the http request
      * @param headerName the header name
      * @return the value, possibly null
-     * @throws MultipleHeaderException if multiple values were provided for the header
+     * @throws MultipleHeaderValuesException if multiple values were provided for the header
      */
-    private String getSingularHeaderValue(HttpServerRequest httpServerRequest, String headerName) throws MultipleHeaderException {
+    private String getSingularHeaderValue(HttpServerRequest httpServerRequest, String headerName) throws MultipleHeaderValuesException {
         List<String> values = httpServerRequest.getRequestHeaderValues(headerName);
         if(values != null && !values.isEmpty()) {
             if(values.size() > 1) {
-                throw new MultipleHeaderException(headerName + " may not be specified multiple times");
+                throw new MultipleHeaderValuesException(headerName + " may not be specified multiple times");
             }
             return values.get(0);
         } else {
@@ -348,11 +349,11 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
         };
     }
     
-    
-    private static final class MultipleHeaderException extends Exception {
+    private static final class MultipleHeaderValuesException extends Exception {
+        
         private static final long serialVersionUID = 1L;
         
-        public MultipleHeaderException(String message) {
+        public MultipleHeaderValuesException(String message) {
             super(message);
         }
     }

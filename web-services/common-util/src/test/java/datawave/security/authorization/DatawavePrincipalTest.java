@@ -2,6 +2,7 @@ package datawave.security.authorization;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.junit.Assert;
@@ -82,15 +83,15 @@ public class DatawavePrincipalTest {
     public void GetProxyServersTest() {
         // direct call from finalServer
         DatawavePrincipal dp = new DatawavePrincipal(Lists.newArrayList(finalServer));
-        Assert.assertEquals(null, dp.getProxyServers());
+        Assert.assertNull(dp.getProxyServers());
 
         // direct call from user
         dp = new DatawavePrincipal(Lists.newArrayList(user));
-        Assert.assertEquals(null, dp.getProxyServers());
+        Assert.assertNull(dp.getProxyServers());
 
         // call from finalServer proxying initial caller server1
         dp = new DatawavePrincipal(Lists.newArrayList(server1, finalServer));
-        Assert.assertEquals(Arrays.asList(finalConnectionServerSubjectDn), dp.getProxyServers());
+        Assert.assertEquals(List.of(finalConnectionServerSubjectDn), dp.getProxyServers());
 
         // call from finalServer proxying initial caller server1 through server2
         dp = new DatawavePrincipal(Lists.newArrayList(server1, server2, finalServer));

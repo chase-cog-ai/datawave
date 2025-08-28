@@ -5,13 +5,13 @@ import java.security.cert.X509Certificate;
 import java.util.Objects;
 import java.util.StringJoiner;
 
-public class ProxiedX509PeerCertificateChainEvidence extends PrunableEvidence {
+public class ProxiedX509CertificateEvidence extends PrunableEvidence {
     
     private final X509Certificate certificate;
     private final String proxiedEntities;
     private final String proxiedIssuers;
     
-    public ProxiedX509PeerCertificateChainEvidence(X509Certificate certificate, String proxiedEntities, String proxiedIssuers) {
+    public ProxiedX509CertificateEvidence(X509Certificate certificate, String proxiedEntities, String proxiedIssuers) {
         this.certificate = certificate;
         this.proxiedEntities = proxiedEntities;
         this.proxiedIssuers = proxiedIssuers;
@@ -38,7 +38,7 @@ public class ProxiedX509PeerCertificateChainEvidence extends PrunableEvidence {
         if (!super.equals(o)) {
             return false;
         }
-        ProxiedX509PeerCertificateChainEvidence evidence = (ProxiedX509PeerCertificateChainEvidence) o;
+        ProxiedX509CertificateEvidence evidence = (ProxiedX509CertificateEvidence) o;
         return Objects.equals(certificate, evidence.certificate) && Objects.equals(proxiedEntities, evidence.proxiedEntities) && Objects.equals(proxiedIssuers,
                         evidence.proxiedIssuers);
     }
@@ -51,7 +51,7 @@ public class ProxiedX509PeerCertificateChainEvidence extends PrunableEvidence {
     @Override
     public String toString() {
         // @formatter:off
-        return new StringJoiner(", ", ProxiedX509PeerCertificateChainEvidence.class.getSimpleName() + "[", "]")
+        return new StringJoiner(", ", ProxiedX509CertificateEvidence.class.getSimpleName() + "[", "]")
                         .add("certificate=" + certificate)
                         .add("proxiedEntities='" + proxiedEntities + "'")
                         .add("proxiedIssuers='" + proxiedIssuers + "'")

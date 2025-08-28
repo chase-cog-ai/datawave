@@ -220,7 +220,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 # - verifier=STRING (optional, default=null)
 #       The class name of an org.jboss.security.auths.certs.X509CertificateVerifier that will be
 # - ocspLevel=STRING (optional, default=null)
-#       Sets the oscp level of the verifier. Required when the verifier is datawave.security.realm.DatawaveCertVerifier.
+#       Sets the oscp level of the verifier. Required when the verifier is datawave.security.cert.DatawaveCertVerifier.
 # - trustedHeaderLogin=BOOLEAN (optional, default=false)
 #       When set to true, the client certificate will not be validated, and will be treated as a valid certificate.
 # - jwtHeaderLogin=BOOLEAN (optional, default=false)
@@ -233,7 +233,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
     class-name=datawave.security.realm.DatawavePrincipalSecurityRealm, \
     module="datawave.security.elytron", \
     configuration={ \
-        verifier="datawave.security.realm.DatawaveCertVerifier", \
+        verifier="datawave.security.cert.DatawaveCertVerifier", \
         ocspLevel="off", \
         allowUserProxying="false", \
         trustedHeaderLogin="${trusted.header.login}"})

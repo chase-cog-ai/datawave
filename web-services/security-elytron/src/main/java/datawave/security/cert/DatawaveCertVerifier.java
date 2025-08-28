@@ -1,4 +1,4 @@
-package datawave.security.realm;
+package datawave.security.cert;
 
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
