@@ -7,11 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.security.authorization.DatawavePrincipal;
 import org.apache.log4j.Logger;
 import org.wildfly.security.authz.Attributes;
 import org.wildfly.security.authz.AuthorizationIdentity;
-import org.wildfly.security.authz.MapAttributes;
 import org.wildfly.security.authz.RoleDecoder;
 import org.wildfly.security.authz.Roles;
 
@@ -29,7 +27,7 @@ public class RequiredRoleDecoder implements RoleDecoder {
     public static final String PRIMARY_USER_ROLES = "PRIMARY_USER_ROLES";
     public static final String PROXIED_USER_ROLES = "PROXIED_USER_ROLES";
     
-    static final String REQUIRED_ROLES = "requiredRoles";
+    static final String OPTION_REQUIRED_ROLES = "requiredRoles";
     
     // @formatter:off
     private static final Set<String> defaultRequiredRoles = Set.of(
@@ -49,16 +47,16 @@ public class RequiredRoleDecoder implements RoleDecoder {
      */
     public void initialize(Map<String,String> config) {
         if (log.isTraceEnabled()) {
-            log.trace("enter: initialize(Map): config=" + config);
+            log.trace("Initializing " + RequiredRoleDecoder.class.getName() + " with config=" + config);
         }
 
-        initRequiredRoles(config.get(REQUIRED_ROLES));
+        initRequiredRoles(config.get(OPTION_REQUIRED_ROLES));
 
         if (log.isTraceEnabled()) {
             log.trace("exit: initialize(Map)");
         }
     }
-
+    
     /**
      * Initialize the required roles for this decoder from a colon-delimited list of roles. If the given string is not null, the roles will be cleared, and the
      * new roles added. Otherwise, all default required roles will be added.
@@ -68,10 +66,16 @@ public class RequiredRoleDecoder implements RoleDecoder {
      */
     private void initRequiredRoles(String requiredRoles) {
         if (requiredRoles == null) {
+            if(log.isTraceEnabled()) {
+                log.trace("No required roles specified, using default roles " + defaultRequiredRoles);
+            }
             this.requiredRoles = defaultRequiredRoles;
         } else {
-            List<String> roles = Arrays.asList(StringUtils.split(requiredRoles, ","));
+            List<String> roles = Arrays.asList(StringUtils.split(requiredRoles, ":"));
             this.requiredRoles = roles.isEmpty() ? Set.of() : Set.copyOf(roles);
+            if(log.isTraceEnabled()) {
+                log.trace("Using required roles " + requiredRoles);
+            }
         }
     }
     
@@ -79,13 +83,17 @@ public class RequiredRoleDecoder implements RoleDecoder {
     public Roles decodeRoles(AuthorizationIdentity identity) {
         Attributes attributes = identity.getAttributes();
         if (attributes.containsKey(PRIMARY_USER_ROLES)) {
-            Set<String> roles = new HashSet<>(Arrays.asList(StringUtils.split(PRIMARY_USER_ROLES, ":")));
+            // Fetch the set of roles that the user is assigned.
+            Set<String> roles = new HashSet<>(attributes.get(PRIMARY_USER_ROLES));
             
-            Set<String> proxiedRoles = new HashSet<>(Arrays.asList(StringUtils.split(PROXIED_USER_ROLES, ":")));
+            // Fetch all roles found for proxied users.
+            Set<String> proxiedRoles = new HashSet<>(attributes.get(PROXIED_USER_ROLES));
+            // If any of the required roles are not found for the proxied users, remove them from the final set of roles.
             if(Collections.disjoint(proxiedRoles, requiredRoles)) {
                 roles.removeAll(requiredRoles);
             }
             
+            // Return the set of roles for the user.
             return Roles.fromSet(roles);
         } else {
             return Roles.NONE;

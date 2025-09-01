@@ -137,7 +137,7 @@ public class JWTTokenHandler {
         return principalsClaim.stream().map(obj -> objectMapper.convertValue(obj, DatawaveUser.class)).collect(Collectors.toList());
     }
 
-    private class CustomJWTBuilder extends DefaultJwtBuilder {
+    private static class CustomJWTBuilder extends DefaultJwtBuilder {
         private final ObjectMapper objectMapper;
 
         private CustomJWTBuilder(ObjectMapper objectMapper) {

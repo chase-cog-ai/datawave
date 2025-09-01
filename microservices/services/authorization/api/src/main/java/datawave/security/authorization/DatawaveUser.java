@@ -19,6 +19,7 @@ import datawave.security.util.ProxiedEntityUtils;
  * represented with a DatawavePrincipal.
  */
 public class DatawaveUser implements Serializable {
+    
     private static final long serialVersionUID = -6676807246749142999L;
 
     public enum UserType {
@@ -26,6 +27,7 @@ public class DatawaveUser implements Serializable {
     }
 
     public static final DatawaveUser ANONYMOUS_USER = new DatawaveUser(SubjectIssuerDNPair.of("ANONYMOUS"), UserType.USER, null, null, null, null, -1L);
+    
     private final String name;
     private final String commonName;
     private final String email;

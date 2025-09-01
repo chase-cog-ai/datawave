@@ -64,5 +64,13 @@
             <artifactId>wildfly-undertow</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.easymock</groupId>
+            <artifactId>easymock</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite</artifactId>
+        </dependency>
     </dependencies>
 </project>
