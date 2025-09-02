@@ -215,29 +215,23 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 # Configure datawave security domain (elytron)
 #
 
-# Create a custom realm that handles preparing the DatawavePrincipal during authentication.
-# Options:
-# - verifier=STRING (optional, default=null)
-#       The class name of an org.jboss.security.auths.certs.X509CertificateVerifier that will be
-# - ocspLevel=STRING (optional, default=null)
-#       Sets the oscp level of the verifier. Required when the verifier is datawave.security.cert.DatawaveCertVerifier.
-# - trustedHeaderLogin=BOOLEAN (optional, default=false)
-#       When set to true, the client certificate will not be validated, and will be treated as a valid certificate.
-# - jwtHeaderLogin=BOOLEAN (optional, default=false)
-#       When set to true, the client certificate will not be validated, and the datawave principal will be created from the credential's jwt token.
-# - requiredRoles=LIST (optional, default="AuthorizedUser:AuthorizedServer:AuthorizedQueryServer:AuthorizedProxiedServer:)
-#       ':' delimited list of roles that either all entities in the call chain must contain at least one of, or else the required roles will not be retained for the final identity.
-# - directRoles=LIST (optional, default="AuthorizedServer:AuthorizedQueryServer")
-#       ':' delimited list of roles that must be present if the client is a terminal server
+# Create a custom role decoder that will decode the roles a user has from a DatawavePrincipal.
+/subsystem=elytron/custom-role-decoder=datawaveRoleDecoder:add( \
+    class-name=datawave.security.realm.RequiredRoleDecoder, \
+    module="datawave.security.elytron", \
+    configuration={})
+
+# Create a custom realm that handles preparing the DatawavePrincipal for authentication.
 /subsystem=elytron/custom-realm=datawaveRealm:add( \
     class-name=datawave.security.realm.DatawavePrincipalSecurityRealm, \
     module="datawave.security.elytron", \
     configuration={ \
-        verifier="datawave.security.cert.DatawaveCertVerifier", \
+        certVerifier="datawave.security.cert.DatawaveCertVerifier", \
         ocspLevel="off", \
-        allowUserProxying="false", \
-        trustedHeaderLogin="${trusted.header.login}"})
-/subsystem=elytron/security-domain=datawaveElytron:add(default-realm=datawaveRealm,realms=[{realm=datawaveRealm}])
+        trustedHeadersEnabled="${dw.trusted.header.authentication:false}")
+
+# Create and configure the security domain 'datawaveElytron' that will handle the authentication and authorization.
+/subsystem=elytron/security-domain=datawaveElytron:add(default-realm=datawaveRealm,realms=[{realm=datawaveRealm}],roleDecoder=datawaveRoleDecoder)
 
 # Configure JmsXA realm (legacy)
 #/subsystem=security/security-domain=JmsXARealm:add(cache-type=default)
@@ -250,16 +244,30 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 #/subsystem=security/security-domain=datawave-client/authentication=classic/login-module=ClientCert:add(code=datawave.security.login.ClientCertLoginModule,flag=required,module-options={password-stacking=useFirstPass})
 #/subsystem=security/security-domain=datawave-client/authentication=classic/login-module=Client:add(code=Client,flag=required,module-options={password-stacking=useFirstPass,restore-login-identity=true})
 
+#
 # Configure the HTTP/HTTPS listener for undertow
-/subsystem=undertow/server=default-server/http-listener=default/:write-attribute(name=record-request-start-time,value=true)
-/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=record-request-start-time,value=true)
-
-# Legacy configuration referencing legacy ssl realm
-# /subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=security-realm,value=SSLRealm)
+#
 
 # Switch https-listener from the legacy security-realm to the Elytron server ssl context.
 /subsystem=undertow/server=default-server/https-listener=https/:undefine-attribute(name=security-realm)
 /subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=ssl-context,value=serverSSLContext)
+
+# Ensure that we log the start time.
+/subsystem=undertow/server=default-server/http-listener=default/:write-attribute(name=record-request-start-time,value=true)
+/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=record-request-start-time,value=true)
+
+#
+# Configure the authentication mechanism for Elytron.
+#
+/subsystem=elytron/service-loader-http-server-mechanism-factory=datawaveMechanismFactory:add(module=datawave.security.elytron)
+/subsystem=elytron/http-authentication-factory=datawaveMechanism:add( \
+    http-server-mechanism-factory=datawaveMechanismFactory, \
+    security-domain=datawaveElytron, \
+    mechanism-configuration=[{mechanism-name=DATAWAVE-AUTH}])
+/subsystem=undertow/application-security-domain=other: \
+    write-attribute(name=http-authentication-factory, value=datawaveMechanismFactory)
+subsystem=undertow/application-security-domain=other: \
+    write-attribute(name=override-deployment-config, value=true)
 
 #
 # Set up ActiveMQ, JMS Topics/Queues/DLQs
@@ -279,6 +287,7 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 #
 # EJB subsystem configuration
 #
+# Map the 'datawaveElytron' security domain to the name 'datawave' and make it discoverable by EJBs.
 /subsystem=ejb3/application-security-domain=datawave:add(security-domain=datawaveElytron)
 /subsystem=ejb3/:write-attribute(name=in-vm-remote-interface-invocation-pass-by-value,value=false)
 /subsystem=ejb3/thread-pool=default/:write-attribute(name=max-threads,value=${jboss.ejb3.async.threads})
