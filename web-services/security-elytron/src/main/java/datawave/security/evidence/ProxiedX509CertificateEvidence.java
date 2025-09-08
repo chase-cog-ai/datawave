@@ -1,35 +1,34 @@
 package datawave.security.evidence;
 
-
 import java.security.cert.X509Certificate;
 import java.util.Objects;
 import java.util.StringJoiner;
 
 public class ProxiedX509CertificateEvidence extends PrunableEvidence {
-    
+
     private final X509Certificate certificate;
     private final String proxiedEntities;
     private final String proxiedIssuers;
-    
+
     public ProxiedX509CertificateEvidence(X509Certificate certificate, String proxiedEntities, String proxiedIssuers) {
         this.certificate = certificate;
         this.proxiedEntities = proxiedEntities;
         this.proxiedIssuers = proxiedIssuers;
         extractEntities(certificate.getSubjectDN().getName(), certificate.getIssuerDN().getName(), proxiedEntities, proxiedIssuers);
     }
-    
+
     public X509Certificate getCertificate() {
         return certificate;
     }
-    
+
     public String getProxiedEntities() {
         return proxiedEntities;
     }
-    
+
     public String getProxiedIssuers() {
         return proxiedIssuers;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -39,15 +38,15 @@ public class ProxiedX509CertificateEvidence extends PrunableEvidence {
             return false;
         }
         ProxiedX509CertificateEvidence evidence = (ProxiedX509CertificateEvidence) o;
-        return Objects.equals(certificate, evidence.certificate) && Objects.equals(proxiedEntities, evidence.proxiedEntities) && Objects.equals(proxiedIssuers,
-                        evidence.proxiedIssuers);
+        return Objects.equals(certificate, evidence.certificate) && Objects.equals(proxiedEntities, evidence.proxiedEntities)
+                        && Objects.equals(proxiedIssuers, evidence.proxiedIssuers);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), certificate, proxiedEntities, proxiedIssuers);
     }
-    
+
     @Override
     public String toString() {
         // @formatter:off

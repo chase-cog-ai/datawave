@@ -1,4 +1,3 @@
 package datawave.security.realm;
 
-public class JWTSuiteChild {
-}
+public class JWTSuiteChild {}
