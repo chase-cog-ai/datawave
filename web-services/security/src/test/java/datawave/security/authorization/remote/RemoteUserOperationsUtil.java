@@ -18,16 +18,16 @@ import javax.security.auth.x500.X500Principal;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.io.IOUtils;
-import org.jboss.security.JSSESecurityDomain;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpHandler;
 
+import datawave.security.SSLContextInfo;
 import datawave.user.DefaultAuthorizationsList;
 import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.common.remote.RemoteServiceUtil;
-import datawave.webservice.common.remote.TestJSSESecurityDomain;
+import datawave.webservice.common.remote.TestSSLContextInfo;
 
 public class RemoteUserOperationsUtil extends RemoteServiceUtil {
     private AtomicBoolean interrupt;
@@ -59,12 +59,13 @@ public class RemoteUserOperationsUtil extends RemoteServiceUtil {
         remote.setExecutorService(null);
         remote.setObjectMapperDecorator(new DefaultMapperDecorator());
         remote.setResponseObjectFactory(new RemoteUserOperationsImplHttpTest.MockResponseObjectFactory());
-        remote.setJsseSecurityDomain(jsseSecurityDomain());
+
+        remote.setSslContextInfo(sslContextInfo());
 
         return remote;
     }
 
-    private JSSESecurityDomain jsseSecurityDomain() throws CertificateException, NoSuchAlgorithmException {
+    private SSLContextInfo sslContextInfo() throws CertificateException, NoSuchAlgorithmException {
         String alias = "tomcat";
         char[] keyPass = "changeit".toCharArray();
         int keysize = 2048;
@@ -83,7 +84,7 @@ public class RemoteUserOperationsUtil extends RemoteServiceUtil {
                         .setSigningKey(keypair.getPrivate()).setSignatureAlgorithmName("SHA256withRSA");
         chain[0] = builder.build();
 
-        return new TestJSSESecurityDomain(alias, privKey, keyPass, chain);
+        return new TestSSLContextInfo(alias, privKey, keyPass, chain);
     }
 
     public HttpHandler getEmptyResponseHandler() {

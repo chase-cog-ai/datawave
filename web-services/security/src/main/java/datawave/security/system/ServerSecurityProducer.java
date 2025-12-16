@@ -10,8 +10,6 @@ import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
-
-
 import datawave.security.SSLContextInfo;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUserService;

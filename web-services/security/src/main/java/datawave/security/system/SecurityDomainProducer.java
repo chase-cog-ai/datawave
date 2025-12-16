@@ -10,7 +10,6 @@ import javax.enterprise.inject.Produces;
 import org.apache.log4j.Logger;
 import org.wildfly.security.auth.server.RealmIdentity;
 
-
 import datawave.security.SSLContextInfo;
 import datawave.security.realm.DatawaveRealmIdentityCache;
 import datawave.security.ssl.SSLContextInfoImpl;
