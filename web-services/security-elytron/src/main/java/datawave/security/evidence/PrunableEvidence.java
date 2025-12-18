@@ -1,5 +1,6 @@
 package datawave.security.evidence;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -14,7 +15,7 @@ import datawave.security.util.DnUtils;
 public abstract class PrunableEvidence implements Evidence {
 
     protected String username;
-    protected List<SubjectIssuerDNPair> entities;
+    protected List<SubjectIssuerDNPair> entities = new ArrayList<>();
 
     protected void extractEntities(String subjectDn, String issuerDn, String proxiedSubjects, String proxiedIssuers) {
         if (proxiedSubjects != null) {
