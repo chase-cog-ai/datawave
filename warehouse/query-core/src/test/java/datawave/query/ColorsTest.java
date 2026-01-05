@@ -47,8 +47,8 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
@@ -134,7 +134,7 @@ public class ColorsTest {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        InMemoryInstance i = new InMemoryInstance(ColorsTest.class.getName());
+        InMemoryAccumulo i = InMemoryAccumulo.getInstance(ColorsTest.class.getName());
         client = new InMemoryAccumuloClient("", i);
 
         ColorsIngest.writeData(client);

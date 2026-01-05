@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
@@ -63,7 +63,7 @@ public abstract class BaseIndexLookupTest {
 
     @BeforeAll
     public static void setup() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance();
+        InMemoryAccumulo instance = new InMemoryAccumulo();
         client = new InMemoryAccumuloClient("root", instance);
         tops = client.tableOperations();
     }

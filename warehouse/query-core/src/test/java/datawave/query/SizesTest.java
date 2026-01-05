@@ -16,8 +16,8 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.index.day.IndexIngestUtil;
@@ -38,7 +38,7 @@ public class SizesTest extends AbstractQueryTest {
     private static final Logger log = LoggerFactory.getLogger(SizesTest.class);
 
     // static utilities for test
-    private static final InMemoryInstance instance = new InMemoryInstance(SizesTest.class.getName());
+    private static final InMemoryAccumulo instance = InMemoryAccumulo.getInstance(SizesTest.class.getName());
     private static AccumuloClient clientForSetup;
     private static SizesIngest ingest;
 

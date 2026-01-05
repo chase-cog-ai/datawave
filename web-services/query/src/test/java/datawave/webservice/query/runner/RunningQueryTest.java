@@ -33,7 +33,7 @@ import org.junit.Test;
 import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
@@ -112,7 +112,7 @@ public class RunningQueryTest {
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
 
         // setup mock connector
-        InMemoryInstance instance = new InMemoryInstance("test instance");
+        InMemoryAccumulo instance = InMemoryAccumulo.getInstance("test instance");
         AccumuloClient client = new InMemoryAccumuloClient("root", instance);
 
         // setup mock logic, handles the setConnection method
@@ -184,7 +184,7 @@ public class RunningQueryTest {
     @Test
     public void testWithCompositeQueryLogic() throws Exception {
         // setup
-        InMemoryInstance instance = new InMemoryInstance("test instance");
+        InMemoryAccumulo instance = InMemoryAccumulo.getInstance("test instance");
         AccumuloClient client = new InMemoryAccumuloClient("root", instance);
 
         // expected merged auths
@@ -221,7 +221,7 @@ public class RunningQueryTest {
     // this shows that updates to the query plan will back propagate to the metric
     @Test
     public void testQueryStringUpdate() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance("test instance");
+        InMemoryAccumulo instance = InMemoryAccumulo.getInstance("test instance");
         AccumuloClient client = new InMemoryAccumuloClient("root", instance);
 
         String[] auths = new String[] {"A", "B"};
@@ -258,7 +258,7 @@ public class RunningQueryTest {
 
     @Test
     public void testEmptyOrNullUpdate() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance("test instance");
+        InMemoryAccumulo instance = InMemoryAccumulo.getInstance("test instance");
         AccumuloClient client = new InMemoryAccumuloClient("root", instance);
 
         String[] auths = new String[] {"A", "B"};
