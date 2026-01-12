@@ -9,7 +9,7 @@ import org.wildfly.security.evidence.Evidence;
  * Represents the evidence of a user provided via a JWT token.
  */
 public class JWTEvidence implements Evidence {
-    
+
     /**
      * The JWT token.
      */
@@ -18,9 +18,10 @@ public class JWTEvidence implements Evidence {
     public JWTEvidence(String token) {
         this.token = token;
     }
-    
+
     /**
      * Return the JWT token.
+     *
      * @return the token
      */
     public String getToken() {

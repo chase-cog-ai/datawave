@@ -16,12 +16,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.net.ssl.X509KeyManager;
 
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.evidence.EvidenceIdentity;
-import datawave.security.evidence.EvidenceIdentityProvider;
-import datawave.security.evidence.JWTEvidenceIdentityProvider;
-import datawave.security.evidence.ProxiedX509CertificateEvidenceIdentityProvider;
-import datawave.security.evidence.TrustedHeaderEvidenceIdentityProvider;
 import org.apache.log4j.Logger;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.realm.CacheableSecurityRealm;
@@ -43,10 +37,16 @@ import com.google.common.base.Preconditions;
 import datawave.configuration.spring.BeanProvider;
 import datawave.security.SSLContextInfo;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.cert.DatawaveCertVerifier;
 import datawave.security.cert.X509CertificateVerifier;
+import datawave.security.evidence.EvidenceIdentity;
+import datawave.security.evidence.EvidenceIdentityProvider;
+import datawave.security.evidence.JWTEvidenceIdentityProvider;
+import datawave.security.evidence.ProxiedX509CertificateEvidenceIdentityProvider;
+import datawave.security.evidence.TrustedHeaderEvidenceIdentityProvider;
 
 public class DatawaveSecurityRealm implements CacheableSecurityRealm {
 
@@ -76,25 +76,29 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
      * Whether {@link DatawaveSecurityRealm#initializeProviders()} has ever been called.
      */
     private boolean providersInitialized = false;
-    
+
     /**
      * Set/inject the user service.
-     * @param userService the user service
+     *
+     * @param userService
+     *            the user service
      */
     @Inject
     public void setDatawaveUserService(DatawaveUserService userService) {
         this.userService = userService;
     }
-    
+
     /**
      * Set/inject the {@link SSLContextInfo} t
-     * @param sslContextInfo the SSL context
+     *
+     * @param sslContextInfo
+     *            the SSL context
      */
     @Inject
     public void setSSLContextInfo(SSLContextInfo sslContextInfo) {
         this.sslContextInfo = sslContextInfo;
     }
-    
+
     /**
      * This method is invoked by the Wildfly Elytron subsystem during the realm's lifecycle to provide configuration parameters. These parameters are typically
      * defined in the Wildfly configuration files, such as jboss .cli files or in the standalone.xml. There is no guarantee that beans will be available for
@@ -103,6 +107,7 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
      * NOTE: Any configuration parameters passed into here will be parsed and stored, but any configuration requiring the presence of CDI beans will not take
      * effect until the next time either @link #getRealmIdentity(Evidence)} or {@link #getEvidenceVerifySupport(Class, String)}is called.
      * <p>
+     *
      * @param config
      *            the configuration parameters
      * @see DatawaveSecurityRealmConfig#fromMap(Map) The list of supported configuration parameters
@@ -275,34 +280,34 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
         initializeProviders();
         return new DatawaveRealmIdentity(this, evidence);
     }
-    
+
     /**
      * A {@link RealmIdentity} implementation that represents a specific authentication attempt against this security realm.
      */
     private static class DatawaveRealmIdentity implements RealmIdentity {
-        
+
         private final DatawaveSecurityRealm datawaveSecurityRealm;
-        
+
         /**
          * The underlying evidence representing the user to be authenticated.
          */
         private final Evidence evidence;
-        
+
         /**
          * The identity found that is associated with the evidence.
          */
         private EvidenceIdentity identity;
-        
+
         /**
          * Whether an attempt has been made to load the identity associated with the evidence.
          */
         private boolean loaded = false;
-        
+
         public DatawaveRealmIdentity(DatawaveSecurityRealm datawaveSecurityRealm, Evidence evidence) {
             this.datawaveSecurityRealm = datawaveSecurityRealm;
             this.evidence = evidence;
         }
-        
+
         @Override
         public Principal getRealmIdentityPrincipal() {
             try {
@@ -314,40 +319,41 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
             }
             return null;
         }
-        
+
         @Override
-        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) {
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName,
+                        AlgorithmParameterSpec parameterSpec) {
             return SupportLevel.UNSUPPORTED;
         }
-        
+
         @Override
         public <C extends Credential> C getCredential(Class<C> credentialType) {
             return null;
         }
-        
+
         @Override
         public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName) {
             Preconditions.checkNotNull(evidenceType, "Parameter evidenceType may not be null");
             return datawaveSecurityRealm.getEvidenceVerifySupport(evidenceType, algorithmName);
         }
-        
+
         @Override
         public boolean verifyEvidence(Evidence evidence) throws RealmUnavailableException {
             Preconditions.checkNotNull(evidence, "Parameter evidence may not be null");
             getIdentity();
             return exists();
         }
-        
+
         @Override
         public AuthorizationIdentity getAuthorizationIdentity() throws RealmUnavailableException {
             return exists() ? AuthorizationIdentity.basicIdentity(identity.getAttributes()) : AuthorizationIdentity.EMPTY;
         }
-        
+
         @Override
         public boolean exists() throws RealmUnavailableException {
             return getIdentity() != null;
         }
-        
+
         private EvidenceIdentity getIdentity() {
             if (!loaded && this.identity == null && evidence != null) {
                 // @formatter:off
@@ -358,15 +364,16 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
                 // @formatter:on
                 if (identityProvider != null) {
                     this.identity = identityProvider.getIdentity(evidence);
-                    if(this.identity != null) {
+                    if (this.identity != null) {
                         DatawavePrincipal principal = new DatawavePrincipal(identity.getUsers());
-                        if(isAnyUserDeniedAccess(principal)) {
-                            if(log.isTraceEnabled()) {
-                                log.trace("User " + principal.getPrimaryUser().getDn() + " has access-denied role " + datawaveSecurityRealm.config.getAccessDeniedRole());
+                        if (isAnyUserDeniedAccess(principal)) {
+                            if (log.isTraceEnabled()) {
+                                log.trace("User " + principal.getPrimaryUser().getDn() + " has access-denied role "
+                                                + datawaveSecurityRealm.config.getAccessDeniedRole());
                             }
                             this.identity = null;
-                        } else if(hasInvalidTerminalServer(principal)) {
-                            if(log.isTraceEnabled()) {
+                        } else if (hasInvalidTerminalServer(principal)) {
+                            if (log.isTraceEnabled()) {
                                 log.trace("User " + principal.getPrimaryUser().getDn() + " has proxied server without required terminal server role");
                             }
                             this.identity = null;
@@ -374,19 +381,20 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
                             Attributes attributes = getAttributes(principal);
                             this.identity = new EvidenceIdentity(this.identity.getUsers(), attributes);
                         }
-                        
+
                     }
-                    
+
                 }
                 this.loaded = true;
             }
             return this.identity;
         }
-        
+
         /**
          * Return whether any user in the chain for the given principal has the access denied role.
          *
-         * @param principal the principal to validate
+         * @param principal
+         *            the principal to validate
          * @return true if any user in the chain is denied access, or false otherwise
          */
         private boolean isAnyUserDeniedAccess(DatawavePrincipal principal) {
@@ -396,27 +404,29 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
             }
             return false;
         }
-        
+
         /**
          * Return whether the given principal has an invalid terminal server as the last user in the chain. The principal is considered to have an invalid
          * terminal server if the last user in its user chain is a server, and it does not have any of the required terminal server roles.
          *
-         * @param principal the principal to validate
+         * @param principal
+         *            the principal to validate
          * @return true if the principal has an invalid terminal server, or false otherwise
          */
         private boolean hasInvalidTerminalServer(DatawavePrincipal principal) {
             // Stream through the user chain to get the last user.
             DatawaveUser lastUser = principal.getProxiedUsers().stream().reduce((prev, next) -> next).orElse(null);
             Set<String> terminalServerRoles = datawaveSecurityRealm.config.getTerminalServerRoles();
-            return lastUser == null || (lastUser.getUserType() == DatawaveUser.UserType.SERVER && lastUser.getRoles().stream()
-                            .noneMatch(terminalServerRoles::contains));
+            return lastUser == null || (lastUser.getUserType() == DatawaveUser.UserType.SERVER
+                            && lastUser.getRoles().stream().noneMatch(terminalServerRoles::contains));
         }
-        
+
         /**
          * Return a {@link Attributes} that contains the roles of the primary user and of the proxied users. This will be used by the
          * {@link RequiredRoleDecoder} to establish what roles a user has.
          *
-         * @param principal the principal to extract attributes from
+         * @param principal
+         *            the principal to extract attributes from
          * @return the attributes
          */
         private Attributes getAttributes(DatawavePrincipal principal) {
@@ -433,7 +443,7 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
             // @formatter:on
             return mapAttributes.asReadOnly();
         }
-        
+
     }
-    
+
 }
