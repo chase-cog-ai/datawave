@@ -228,7 +228,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
     configuration={ \
         certVerifier="datawave.security.cert.DatawaveCertVerifier", \
         ocspLevel="off", \
-        trustedHeadersEnabled="${dw.trusted.header.authentication:false}")
+        trustedHeadersEnabled="${dw.trusted.header.authentication:false}"})
 
 # Create and configure the security domain 'datawaveElytron' that will handle the authentication and authorization.
 /subsystem=elytron/security-domain=datawaveElytron:add(default-realm=datawaveRealm,realms=[{realm=datawaveRealm}],roleDecoder=datawaveRoleDecoder)
