@@ -14,10 +14,6 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 # Add a module containing custom datawave elytron components.
 # module add --name=datawave.elytron --dependencies=org.apache.log4j,org.wildfly.security.elytron,org.wildfly.extension.elytron,com.fasterxml.jackson.core.jackson-core,com.fasterxml.jackson.core.jackson-databind,com.fasterxml.jackson.datatype.jackson-datatype-guava --resources=elytron/datawave-ws-security-${project.version}.jar
 
-# Remove the metrics subsystem since it is currently buggy (thread-safety issue) and can cause deployment failures
-# See WFLY-11801 for details.
-/subsystem=microprofile-metrics-smallrye:remove
-
 # Change default ports to listen on all interfaces (can still override on command line)
 /interface=public/:write-attribute(name=inet-address,value="${jboss.bind.address:0.0.0.0}")
 /interface=management/:write-attribute(name=inet-address,value="${jboss.bind.address.management:0.0.0.0}")
@@ -228,10 +224,11 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
     configuration={ \
         certVerifier="datawave.security.cert.DatawaveCertVerifier", \
         ocspLevel="off", \
-        trustedHeadersEnabled="${dw.trusted.header.authentication:false}"})
+        trustedHeadersEnabled="${dw.trusted.header.authentication:false}" \
+        })
 
 # Create and configure the security domain 'datawaveElytron' that will handle the authentication and authorization.
-/subsystem=elytron/security-domain=datawaveElytron:add(default-realm=datawaveRealm,realms=[{realm=datawaveRealm}],roleDecoder=datawaveRoleDecoder)
+/subsystem=elytron/security-domain=datawaveElytron:add(default-realm=datawaveRealm,realms=[{realm=datawaveRealm}],role-decoder=datawaveRoleDecoder)
 
 # Configure JmsXA realm (legacy)
 #/subsystem=security/security-domain=JmsXARealm:add(cache-type=default)
@@ -259,15 +256,25 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 #
 # Configure the authentication mechanism for Elytron.
 #
-/subsystem=elytron/service-loader-http-server-mechanism-factory=datawaveMechanismFactory:add(module=datawave.security.elytron)
-/subsystem=elytron/http-authentication-factory=datawaveMechanism:add( \
+/subsystem=elytron/service-loader-http-server-mechanism-factory=datawaveMechanismFactory:add( \
+    module=datawave.security.elytron)
+/subsystem=elytron/http-authentication-factory=datawaveAuthenticationFactory:add( \
     http-server-mechanism-factory=datawaveMechanismFactory, \
     security-domain=datawaveElytron, \
-    mechanism-configuration=[{mechanism-name=DATAWAVE-AUTH}])
-/subsystem=undertow/application-security-domain=other: \
-    write-attribute(name=http-authentication-factory, value=datawaveMechanismFactory)
-subsystem=undertow/application-security-domain=other: \
-    write-attribute(name=override-deployment-config, value=true)
+    mechanism-configurations=[{mechanism-name=DATAWAVE-AUTH}])
+
+#
+# Ensure undertow is configured to use the custom authentication mechanism.
+#
+
+# Configure a security domain for the application that uses the datawave mechanism factory. Override the deployment
+# config in order to support the use of DATAWAVE-AUTH instead of BASIC only by default.
+/subsystem=undertow/application-security-domain=datawaveApplicationDomain:add( \
+    http-authentication-factory=datawaveAuthenticationFactory, \
+    override-deployment-config=true)
+# Ensure the default application security domain is datawaveApplicationDomain.
+/subsystem=undertow:write-attribute( \
+    name=default-security-domain, value="datawaveApplicationDomain")
 
 #
 # Set up ActiveMQ, JMS Topics/Queues/DLQs
@@ -347,7 +354,6 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 /subsystem=logging/logger=org.wildfly.security:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=org.wildfly.security.tls:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=org.wildfly.extension.elytron:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
-/subsystem=logging/logger=javax.security.sasl:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=javax.security.sasl:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=datawave.webservice.modification:add(use-parent-handlers=false,handlers=["MODIFICATION_LOG"])
 /subsystem=logging/logger=datawave.webservice.query.distributed:add(use-parent-handlers=false,handlers=["DISTRIBUTED_QUERY_LOG"])
