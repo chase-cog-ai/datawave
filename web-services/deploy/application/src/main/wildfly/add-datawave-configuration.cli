@@ -219,7 +219,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 
 # Create a custom realm that handles preparing the DatawavePrincipal for authentication.
 /subsystem=elytron/custom-realm=datawaveRealm:add( \
-    class-name=datawave.security.realm.DatawavePrincipalSecurityRealm, \
+    class-name=datawave.security.realm.DatawaveSecurityRealm, \
     module="datawave.security.elytron", \
     configuration={ \
         certVerifier="datawave.security.cert.DatawaveCertVerifier", \
