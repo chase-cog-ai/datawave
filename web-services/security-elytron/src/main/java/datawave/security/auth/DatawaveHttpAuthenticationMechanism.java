@@ -138,7 +138,6 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
         if (log.isTraceEnabled()) {
             log.trace("Computed evidence: " + evidence);
         }
-        ;
 
         if (dnsToPrune != null && evidence instanceof PrunableEvidence) {
             ((PrunableEvidence) evidence).pruneEntities(dnsToPrune);

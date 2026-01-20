@@ -4,6 +4,8 @@ import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 
+import org.apache.log4j.Logger;
+
 import org.wildfly.security.evidence.Evidence;
 
 import com.google.common.base.Preconditions;
@@ -19,7 +21,9 @@ import datawave.security.cert.X509CertificateVerifier;
  * {@link EvidenceIdentityProvider} implementation for SSL cert authentication.
  */
 public class ProxiedX509CertificateEvidenceIdentityProvider implements EvidenceIdentityProvider {
-
+    
+    private static final Logger log = Logger.getLogger(ProxiedX509CertificateEvidenceIdentityProvider.class);
+    
     private final DatawaveUserService userService;
     private final SSLContextInfo sslContextInfo;
     private final X509CertificateVerifier certVerifier;
@@ -37,18 +41,22 @@ public class ProxiedX509CertificateEvidenceIdentityProvider implements EvidenceI
     }
 
     @Override
-    public EvidenceIdentity getIdentity(Evidence evidence) {
+    public EvidenceIdentity getIdentity(Evidence evidence) throws AuthorizationException {
         Preconditions.checkNotNull(evidence, "Evidence may not be null");
         Preconditions.checkArgument(canProvideIdentityFrom(evidence.getClass()), "Evidence type " + evidence.getClass().getName() + " is not supported");
 
         ProxiedX509CertificateEvidence certificateEvidence = (ProxiedX509CertificateEvidence) evidence;
         // Validate the provided certificate.
         if (isValidCertificate(certificateEvidence.getCertificate())) {
-            try {
-                Collection<DatawaveUser> users = this.userService.lookup(certificateEvidence.getEntities());
+            Collection<DatawaveUser> users = this.userService.lookup(certificateEvidence.getEntities());
+            if(users != null && !users.isEmpty()) {
                 return new EvidenceIdentity(users);
-            } catch (AuthorizationException e) {
-                throw new RuntimeException(e);
+            } else {
+                log.trace("User service returned no users for certificate " + certificateEvidence.getCertificate());
+            }
+        } else {
+            if(log.isTraceEnabled()) {
+                log.trace("Certificate is not valid: " + certificateEvidence.getCertificate());
             }
         }
 
@@ -63,13 +71,12 @@ public class ProxiedX509CertificateEvidenceIdentityProvider implements EvidenceI
      * @return true if the certificate is valid, or false otherwise
      */
     private boolean isValidCertificate(X509Certificate certificate) {
-        KeyStore keyStore = this.sslContextInfo.getKeyStore();
-        KeyStore trustStore = this.sslContextInfo.getTrustStore();
-        if (trustStore != null) {
-            trustStore = keyStore;
-        }
-
-        if (certVerifier != null) {
+        if(certVerifier != null) {
+            KeyStore keyStore = this.sslContextInfo.getKeyStore();
+            KeyStore trustStore = this.sslContextInfo.getTrustStore();
+            if (trustStore != null) {
+                trustStore = keyStore;
+            }
             String alias = certificate.getIssuerX500Principal().getName();
             if (certVerifier instanceof DatawaveCertVerifier && !((DatawaveCertVerifier) certVerifier).isIssuerSupported(alias, trustStore)) {
                 return false;

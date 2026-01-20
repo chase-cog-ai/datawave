@@ -63,12 +63,47 @@ class TrustedHeaderEvidenceIdentityProviderTest {
         assertThatThrownBy(() -> provider.getIdentity(evidence)).isInstanceOf(IllegalArgumentException.class)
                         .hasMessageContaining("Evidence type " + JWTEvidence.class.getName() + " is not supported");
     }
-
+    
+    @Test
+    void testGetIdentityGivenNullUsersReturned() throws AuthorizationException {
+        DatawaveUserService userService = mock(DatawaveUserService.class);
+        TrustedHeaderEvidenceIdentityProvider provider = new TrustedHeaderEvidenceIdentityProvider(userService);
+        
+        TrustedHeaderEvidence evidence = new TrustedHeaderEvidence("subjectDn", "issuerDn", "proxiedSubjects", "proxiedIssuers");
+        
+        // Mock up the user service behavior.
+        when(userService.lookup(evidence.getEntities())).thenReturn(null);
+        
+        // Obtain the identity for the evidence.
+        EvidenceIdentity identity = provider.getIdentity(evidence);
+        
+        // Assert the identity.
+        assertThat(identity).isNull();
+    }
+    
+    @Test
+    void testGetIdentityGivenEmptyUsersReturned() throws AuthorizationException {
+        DatawaveUserService userService = mock(DatawaveUserService.class);
+        TrustedHeaderEvidenceIdentityProvider provider = new TrustedHeaderEvidenceIdentityProvider(userService);
+        
+        TrustedHeaderEvidence evidence = new TrustedHeaderEvidence("subjectDn", "issuerDn", "proxiedSubjects", "proxiedIssuers");
+        
+        // Mock up the user service behavior.
+        when(userService.lookup(evidence.getEntities())).thenReturn(new HashSet<>());
+        
+        // Obtain the identity for the evidence.
+        EvidenceIdentity identity = provider.getIdentity(evidence);
+        
+        // Assert the identity.
+        assertThat(identity).isNull();
+    }
+    
+    
     /**
      * Verify that {@link JWTEvidenceIdentityProvider#getIdentity(Evidence)} will fetch users using the token.
      */
     @Test
-    void testGetIdentityGivenValidEvidence() throws AuthorizationException {
+    void testGetIdentityGivenValidEvidence() throws Exception {
         DatawaveUserService userService = mock(DatawaveUserService.class);
         TrustedHeaderEvidenceIdentityProvider provider = new TrustedHeaderEvidenceIdentityProvider(userService);
 

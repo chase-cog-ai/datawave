@@ -2,6 +2,8 @@ package datawave.security.evidence;
 
 import java.util.Collection;
 
+import org.apache.log4j.Logger;
+
 import org.wildfly.security.evidence.Evidence;
 
 import com.google.common.base.Preconditions;
@@ -14,7 +16,9 @@ import datawave.security.authorization.DatawaveUserService;
  * {@link EvidenceIdentityProvider} implementation for trusted header authentication.
  */
 public class TrustedHeaderEvidenceIdentityProvider implements EvidenceIdentityProvider {
-
+    
+    private static final Logger log = Logger.getLogger(TrustedHeaderEvidenceIdentityProvider.class);
+    
     private final DatawaveUserService userService;
 
     public TrustedHeaderEvidenceIdentityProvider(DatawaveUserService userService) {
@@ -27,17 +31,20 @@ public class TrustedHeaderEvidenceIdentityProvider implements EvidenceIdentityPr
     }
 
     @Override
-    public EvidenceIdentity getIdentity(Evidence evidence) {
+    public EvidenceIdentity getIdentity(Evidence evidence) throws AuthorizationException {
         Preconditions.checkNotNull(evidence, "Evidence may not be null");
         Preconditions.checkArgument(canProvideIdentityFrom(evidence.getClass()), "Evidence type " + evidence.getClass().getName() + " is not supported");
 
         TrustedHeaderEvidence trustedHeaderEvidence = (TrustedHeaderEvidence) evidence;
 
-        try {
-            Collection<DatawaveUser> users = this.userService.lookup(trustedHeaderEvidence.getEntities());
+        Collection<DatawaveUser> users = this.userService.lookup(trustedHeaderEvidence.getEntities());
+        if(users != null && !users.isEmpty()) {
             return new EvidenceIdentity(users);
-        } catch (AuthorizationException e) {
-            throw new RuntimeException(e);
+        } else {
+            if(log.isTraceEnabled()) {
+                log.trace("User service returned no users for entities " + trustedHeaderEvidence.getEntities());
+            }
+            return null;
         }
     }
 }

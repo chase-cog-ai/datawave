@@ -23,5 +23,5 @@ public interface EvidenceIdentityProvider {
      *            the evidence
      * @return the identity, possibly null
      */
-    EvidenceIdentity getIdentity(Evidence evidence);
+    EvidenceIdentity getIdentity(Evidence evidence) throws Exception;
 }

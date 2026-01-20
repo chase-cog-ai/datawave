@@ -89,7 +89,7 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
     }
 
     /**
-     * Set/inject the {@link SSLContextInfo} t
+     * Set/inject the {@link SSLContextInfo}.
      *
      * @param sslContextInfo
      *            the SSL context
@@ -177,11 +177,12 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
 
         // If trusted header authentication is enabled, create and add a trusted header identity provider.
         if (config.isTrustedHeadersEnabled()) {
-            log.trace("Creating Trusted headers identity provider");
+            log.trace("Creating Trusted Headers identity provider");
             providers.add(new TrustedHeaderEvidenceIdentityProvider(userService));
         }
 
         // Always add an identity provider for X509 certs. SSL authentication is always enabled.
+        log.trace("Creating Proxed X509 Certificate identity provider");
         providers.add(createProxiedX509IdentityProvider());
         return providers;
     }
@@ -224,7 +225,7 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
                 ClassLoader loader = Thread.currentThread().getContextClassLoader();
                 Class<?> verifierClass = loader.loadClass(config.getCertVerifierClass());
                 certVerifier = (X509CertificateVerifier) verifierClass.getDeclaredConstructor().newInstance();
-                // Additional configuration required.
+                // Additional configuration required if a DatawaveCertVerifier.
                 if (certVerifier instanceof DatawaveCertVerifier) {
                     ((DatawaveCertVerifier) certVerifier).setLogger(log);
                     ((DatawaveCertVerifier) certVerifier).setOcspLevel(config.getOscpLevel());
@@ -340,7 +341,11 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
         @Override
         public boolean verifyEvidence(Evidence evidence) throws RealmUnavailableException {
             Preconditions.checkNotNull(evidence, "Parameter evidence may not be null");
-            getIdentity();
+            try {
+                getIdentity();
+            } catch (Exception e) {
+                throw new RealmUnavailableException("Error occured while verifying evidence", e);
+            }
             return exists();
         }
 
@@ -351,11 +356,20 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
 
         @Override
         public boolean exists() throws RealmUnavailableException {
-            return getIdentity() != null;
+            try {
+                return getIdentity() != null;
+            } catch (Exception e) {
+                throw new RealmUnavailableException("Error occurred when checking if identity exists", e);
+            }
         }
-
-        private EvidenceIdentity getIdentity() {
+        
+        /**
+         * Load the identity if not already loaded and return it.
+         * @return the identity, possibly null
+         */
+        private EvidenceIdentity getIdentity() throws Exception {
             if (!loaded && this.identity == null && evidence != null) {
+                // Find the identity provider to use for loading the identity.
                 // @formatter:off
                 EvidenceIdentityProvider identityProvider = datawaveSecurityRealm.identityProviders.stream()
                                 .filter(provider -> provider.canProvideIdentityFrom(evidence.getClass()))
@@ -363,28 +377,41 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
                                 .orElse(null);
                 // @formatter:on
                 if (identityProvider != null) {
+                    if(log.isTraceEnabled()) {
+                        log.trace("Using identity provider " + identityProvider.getClass().getName());
+                    }
+                    
                     this.identity = identityProvider.getIdentity(evidence);
                     if (this.identity != null) {
+                        // Check if the user has a role that denies them access.
                         DatawavePrincipal principal = new DatawavePrincipal(identity.getUsers());
                         if (isAnyUserDeniedAccess(principal)) {
                             if (log.isTraceEnabled()) {
-                                log.trace("User " + principal.getPrimaryUser().getDn() + " has access-denied role "
+                                log.trace("User " + principal.getPrimaryUser() + " has access-denied role "
                                                 + datawaveSecurityRealm.config.getAccessDeniedRole());
                             }
                             this.identity = null;
                         } else if (hasInvalidTerminalServer(principal)) {
+                            // Check if the certificate chain contains a proxied server without the required terminal server role.
                             if (log.isTraceEnabled()) {
-                                log.trace("User " + principal.getPrimaryUser().getDn() + " has proxied server without required terminal server role");
+                                log.trace("User " + principal.getPrimaryUser() + " has proxied server without required terminal server role");
                             }
                             this.identity = null;
                         } else {
+                            // At this point the identity is considered valid. Load the attributes and the identity.
                             Attributes attributes = getAttributes(principal);
                             this.identity = new EvidenceIdentity(this.identity.getUsers(), attributes);
+                            if(log.isTraceEnabled()) {
+                                log.trace("Loaded identity " + this.identity);
+                            }
                         }
-
                     }
-
+                } else {
+                    if(log.isTraceEnabled()) {
+                        log.trace("No identity provider found for evidence of type " + evidence.getClass().getName());
+                    }
                 }
+                // Mark that we've loaded the identity.
                 this.loaded = true;
             }
             return this.identity;
@@ -443,7 +470,5 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
             // @formatter:on
             return mapAttributes.asReadOnly();
         }
-
     }
-
 }

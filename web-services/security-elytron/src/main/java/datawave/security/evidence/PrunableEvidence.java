@@ -18,6 +18,7 @@ public abstract class PrunableEvidence implements Evidence {
     protected List<SubjectIssuerDNPair> entities = new ArrayList<>();
 
     protected void extractEntities(String subjectDn, String issuerDn, String proxiedSubjects, String proxiedIssuers) {
+        List<SubjectIssuerDNPair> entities = new ArrayList<>();
         if (proxiedSubjects != null) {
             String[] subjects = DnUtils.splitProxiedDNs(proxiedSubjects, true);
             if (proxiedIssuers == null)
@@ -31,12 +32,13 @@ public abstract class PrunableEvidence implements Evidence {
             }
         }
         entities.add(SubjectIssuerDNPair.of(subjectDn, issuerDn));
-        username = DnUtils.buildNormalizedProxyDN(subjectDn, issuerDn, proxiedSubjects, proxiedIssuers);
+        this.entities = List.copyOf(entities);
+        this.username = DnUtils.buildNormalizedProxyDN(subjectDn, issuerDn, proxiedSubjects, proxiedIssuers);
     }
 
     public void pruneEntities(Collection<String> entitiesToPrune) {
         Set<String> normalizedEntities = entitiesToPrune.stream().map(String::toLowerCase).collect(Collectors.toSet());
-        this.entities = entities.stream().filter(e -> !normalizedEntities.contains(e.subjectDN().toLowerCase())).collect(Collectors.toList());
+        this.entities = List.copyOf(entities.stream().filter(e -> !normalizedEntities.contains(e.subjectDN().toLowerCase())).collect(Collectors.toList()));
         this.username = DnUtils.buildNormalizedProxyDN(entities);
     }
 
@@ -45,7 +47,7 @@ public abstract class PrunableEvidence implements Evidence {
     }
 
     public List<SubjectIssuerDNPair> getEntities() {
-        return List.copyOf(entities);
+        return entities;
     }
 
     @Override

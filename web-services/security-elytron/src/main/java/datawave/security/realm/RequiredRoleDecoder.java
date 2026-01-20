@@ -88,13 +88,15 @@ public class RequiredRoleDecoder implements RoleDecoder {
 
             // Fetch all roles found for proxied users.
             Set<String> proxiedRoles = new HashSet<>(attributes.get(PROXIED_USER_ROLES));
+            
             // If any of the required roles are not found for the proxied users, remove them from the final set of roles.
             if (Collections.disjoint(proxiedRoles, requiredRoles)) {
+                log.trace("Did not find required roles in proxied user roles, removing required roles from primary user");
                 roles.removeAll(requiredRoles);
             }
-
+            
             // Return the set of roles for the user.
-            return Roles.fromSet(roles);
+            return roles.isEmpty() ? Roles.NONE : Roles.fromSet(roles);
         } else {
             return Roles.NONE;
         }
