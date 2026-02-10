@@ -14,7 +14,6 @@
         <module>accumulo</module>
         <module>common-util</module>
         <module>security</module>
-        <module>security-elytron</module>
         <module>common</module>
         <module>query</module>
         <module>client</module>

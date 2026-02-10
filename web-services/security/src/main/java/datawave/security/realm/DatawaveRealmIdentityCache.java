@@ -5,8 +5,6 @@ import java.util.Set;
 
 import org.wildfly.security.auth.server.RealmIdentity;
 
-import datawave.security.authorization.DatawavePrincipal;
-
 public interface DatawaveRealmIdentityCache {
 
     void put(Principal principal, RealmIdentity realmIdentity);

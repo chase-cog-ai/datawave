@@ -17,7 +17,7 @@
         <dependencies>
             <dependency>
                 <groupId>gov.nsa.datawave.webservices</groupId>
-                <artifactId>datawave-ws-security-elytron</artifactId>
+                <artifactId>datawave-ws-security</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>
@@ -576,7 +576,7 @@
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
                             <!--
-                            Copy the datawave security elytron jar and its dependency to the overlay module directory to ensure it's added as a Wildfly module.
+                            Copy the datawave security jar and its dependencies to the overlay module directory so that it can be added as a Wildfly module.
                             -->
                             <execution>
                                 <id>copy-security-jar</id>
@@ -585,11 +585,11 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <outputDirectory>${project.build.directory}/wildfly/overlay/modules/datawave/security/elytron/main</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/wildfly/overlay/modules/datawave/security/main</outputDirectory>
                                     <artifactItems>
                                         <artifactItem>
                                             <groupId>gov.nsa.datawave.webservices</groupId>
-                                            <artifactId>datawave-ws-security-elytron</artifactId>
+                                            <artifactId>datawave-ws-security</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>gov.nsa.datawave.webservices</groupId>

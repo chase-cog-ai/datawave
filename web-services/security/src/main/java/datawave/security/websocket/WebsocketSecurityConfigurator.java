@@ -15,13 +15,10 @@ public class WebsocketSecurityConfigurator extends Configurator {
 
     @Override
     public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
-        // noop until elytron equivalent
+        // todo - elytron equivalent if still needed
         /*
-         * super.modifyHandshake(sec, request, response); SecurityDomain securityDomain = SecurityDomain.getCurrent(); SecurityIdentity identity =
-         * securityDomain.getCurrentSecurityIdentity();
-         *
-         * sec.getUserProperties().put(WebsocketSecurityInterceptor.SESSION_PRINCIPAL, request.getUserPrincipal());
-         * sec.getUserProperties().put(WebsocketSecurityInterceptor.SESSION_SUBJECT, SecurityContextAssociation.getSubject());
+         * super.modifyHandshake(sec, request, response); sec.getUserProperties().put(WebsocketSecurityInterceptor.SESSION_PRINCIPAL,
+         * request.getUserPrincipal()); sec.getUserProperties().put(WebsocketSecurityInterceptor.SESSION_SUBJECT, SecurityContextAssociation.getSubject());
          * sec.getUserProperties().put(WebsocketSecurityInterceptor.SESSION_CREDENTIAL, SecurityContextAssociation.getPrincipal()); Map<String,List<String>>
          * headers = request.getHeaders(); if (headers != null) { List<String> loginHeader = headers.get(REQUEST_LOGIN_TIME_HEADER); if (loginHeader != null &&
          * !loginHeader.isEmpty()) { sec.getUserProperties().put(REQUEST_LOGIN_TIME_HEADER, loginHeader.get(0)); } }

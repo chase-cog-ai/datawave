@@ -42,7 +42,7 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
 
 /**
- * A {@link CachedDatawaveUserService} for testing purposes. This version will only be active if the syste property {@code dw.security.use.testuserservice} is
+ * A {@link CachedDatawaveUserService} for testing purposes. This version will only be active if the system property {@code dw.security.use.testuserservice} is
  * set to {@code true}. When active, any incoming requests will first check a map of "canned" users and use the canned result if found. When no result is found,
  * it will delegate to the highest priority other {@link CachedDatawaveUserService} or {@link DatawaveUserService} that can be found. If no other instance is
  * found, then construction of this bean will fail.

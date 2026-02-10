@@ -29,6 +29,8 @@ public class ProxiedX509CertificateEvidenceIdentityProvider implements EvidenceI
 
     public ProxiedX509CertificateEvidenceIdentityProvider(DatawaveUserService userService, SSLContextInfo sslContextInfo, X509CertificateVerifier certVerifier)
                     throws IllegalArgumentException {
+        Preconditions.checkNotNull(userService, "User service must not be null");
+        Preconditions.checkArgument(certVerifier == null || sslContextInfo != null, "SSL context must not be null when cert verifier is not null");
         this.userService = userService;
         this.sslContextInfo = sslContextInfo;
         this.certVerifier = certVerifier;
@@ -45,6 +47,7 @@ public class ProxiedX509CertificateEvidenceIdentityProvider implements EvidenceI
         Preconditions.checkArgument(canProvideIdentityFrom(evidence.getClass()), "Evidence type " + evidence.getClass().getName() + " is not supported");
 
         ProxiedX509CertificateEvidence certificateEvidence = (ProxiedX509CertificateEvidence) evidence;
+
         // Validate the provided certificate.
         if (isValidCertificate(certificateEvidence.getCertificate())) {
             Collection<DatawaveUser> users = this.userService.lookup(certificateEvidence.getEntities());

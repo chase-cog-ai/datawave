@@ -27,7 +27,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 
 import datawave.core.query.remote.RemoteQueryService;
 import datawave.core.query.remote.RemoteTimeoutQueryException;
-import datawave.security.auth.DatawaveAuthenticationMechanism;
+import datawave.security.auth.DatawaveHttpAuthenticationMechanism;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.common.remote.RemoteHttpService;
@@ -39,8 +39,8 @@ import datawave.webservice.result.VoidResponse;
 public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQueryService {
     private static final Logger log = LoggerFactory.getLogger(RemoteQueryServiceImpl.class);
 
-    public static final String PROXIED_ENTITIES_HEADER = DatawaveAuthenticationMechanism.PROXIED_ENTITIES_HEADER;
-    public static final String PROXIED_ISSUERS_HEADER = DatawaveAuthenticationMechanism.PROXIED_ISSUERS_HEADER;
+    public static final String PROXIED_ENTITIES_HEADER = DatawaveHttpAuthenticationMechanism.PROXIED_ENTITIES_HEADER;
+    public static final String PROXIED_ISSUERS_HEADER = DatawaveHttpAuthenticationMechanism.PROXIED_ISSUERS_HEADER;
 
     private static final String CREATE = "%s/create";
 

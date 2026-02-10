@@ -17,7 +17,7 @@ import org.springframework.cache.annotation.EnableCaching;
 import com.fasterxml.jackson.databind.ObjectReader;
 
 import datawave.authorization.remote.RemoteAuthorizationException;
-import datawave.security.auth.DatawaveAuthenticationMechanism;
+import datawave.security.auth.DatawaveHttpAuthenticationMechanism;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.ProxiedUserDetails;
@@ -30,8 +30,8 @@ import datawave.webservice.result.GenericResponse;
 public class RemoteUserOperationsImpl extends RemoteHttpService implements UserOperations {
     private static final Logger log = LoggerFactory.getLogger(RemoteUserOperationsImpl.class);
 
-    public static final String PROXIED_ENTITIES_HEADER = DatawaveAuthenticationMechanism.PROXIED_ENTITIES_HEADER;
-    public static final String PROXIED_ISSUERS_HEADER = DatawaveAuthenticationMechanism.PROXIED_ISSUERS_HEADER;
+    public static final String PROXIED_ENTITIES_HEADER = DatawaveHttpAuthenticationMechanism.PROXIED_ENTITIES_HEADER;
+    public static final String PROXIED_ISSUERS_HEADER = DatawaveHttpAuthenticationMechanism.PROXIED_ISSUERS_HEADER;
 
     private static final String LIST_EFFECTIVE_AUTHS = "listEffectiveAuthorizations";
 

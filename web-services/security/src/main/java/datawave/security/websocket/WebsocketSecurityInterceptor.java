@@ -1,6 +1,5 @@
 package datawave.security.websocket;
 
-import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
@@ -26,28 +25,36 @@ public class WebsocketSecurityInterceptor {
     public static final String SESSION_SUBJECT = "websocket.security.subject";
     public static final String SESSION_CREDENTIAL = "websocket.security.credential";
 
-    @AroundInvoke
-    public Object intercept(InvocationContext ctx) throws Exception {
-        // noop until elytron equivalent
-        /*
-         * Session session = findSessionParameter(ctx); if (session != null) { final Principal principal = (Principal)
-         * session.getUserProperties().get(SESSION_PRINCIPAL); final Subject subject = (Subject) session.getUserProperties().get(SESSION_SUBJECT); final Object
-         * credential = session.getUserProperties().get(SESSION_CREDENTIAL);
-         *
-         * if (principal != null && subject != null) { setSubjectInfo(principal, subject, credential); } }
-         */
+    // todo - elytron equivalent if still needed
 
-        return ctx.proceed();
+    /*
+     * @AroundInvoke public Object intercept(InvocationContext ctx) throws Exception { Session session = findSessionParameter(ctx); if (session != null) { final
+     * Principal principal = (Principal) session.getUserProperties().get(SESSION_PRINCIPAL); final Subject subject = (Subject)
+     * session.getUserProperties().get(SESSION_SUBJECT); final Object credential = session.getUserProperties().get(SESSION_CREDENTIAL);
+     *
+     * if (principal != null && subject != null) { setSubjectInfo(principal, subject, credential); } }
+     *
+     * return ctx.proceed(); }
+     */
+
+    protected Session findSessionParameter(InvocationContext ctx) {
+        Session session = null;
+        for (Object param : ctx.getParameters()) {
+            if (param instanceof Session) {
+                session = (Session) param;
+                break;
+            }
+        }
+        return session;
     }
 
     /*
-     * protected Session findSessionParameter(InvocationContext ctx) { Session session = null; for (Object param : ctx.getParameters()) { if (param instanceof
-     * Session) { session = (Session) param; break; } } return session; }
-     *
      * protected void setSubjectInfo(final Principal principal, final Subject subject, final Object credential) { SecurityContext securityContext =
      * SecurityContextAssociation.getSecurityContext(); Role roleGroup = getRoleGroup(subject); Identity identity =
      * CredentialIdentityFactory.createIdentity(principal, credential, roleGroup); securityContext.getUtil().createSubjectInfo(identity, subject); }
-     *
+     */
+
+    /*
      * protected Role getRoleGroup(final Subject subject) { Role roleGroup = null; for (Group group : subject.getPrincipals(Group.class)) { if
      * ("Roles".equals(group.getName())) { roleGroup = new SimpleRoleGroup(group); break; } } return roleGroup; }
      */

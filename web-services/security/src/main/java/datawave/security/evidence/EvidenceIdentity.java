@@ -6,7 +6,6 @@ import java.util.Objects;
 import java.util.StringJoiner;
 
 import org.wildfly.security.authz.Attributes;
-import org.wildfly.security.evidence.Evidence;
 
 import datawave.security.authorization.DatawaveUser;
 

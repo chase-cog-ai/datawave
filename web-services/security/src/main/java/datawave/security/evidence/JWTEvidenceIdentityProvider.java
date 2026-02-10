@@ -20,7 +20,7 @@ public class JWTEvidenceIdentityProvider implements EvidenceIdentityProvider {
     private final JWTTokenHandler jwtTokenHandler;
 
     public JWTEvidenceIdentityProvider(JWTTokenHandler jwtTokenHandler) {
-        Preconditions.checkNotNull(jwtTokenHandler, "Parameter jwtTokenHandler may not be null");
+        Preconditions.checkNotNull(jwtTokenHandler, "JWT Token handler must not be null");
         this.jwtTokenHandler = jwtTokenHandler;
     }
 

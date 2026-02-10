@@ -44,8 +44,11 @@ import datawave.security.cert.DatawaveCertVerifier;
 import datawave.security.cert.X509CertificateVerifier;
 import datawave.security.evidence.EvidenceIdentity;
 import datawave.security.evidence.EvidenceIdentityProvider;
+import datawave.security.evidence.JWTEvidence;
 import datawave.security.evidence.JWTEvidenceIdentityProvider;
+import datawave.security.evidence.ProxiedX509CertificateEvidence;
 import datawave.security.evidence.ProxiedX509CertificateEvidenceIdentityProvider;
+import datawave.security.evidence.TrustedHeaderEvidence;
 import datawave.security.evidence.TrustedHeaderEvidenceIdentityProvider;
 
 public class DatawaveSecurityRealm implements CacheableSecurityRealm {
@@ -68,14 +71,24 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
     private DatawaveSecurityRealmConfig config = null;
 
     /**
-     * The configured identity providers. These are established the first time {@link DatawaveSecurityRealm#initializeProviders()} is called.
+     * The supported evidence types. These are established the first time {@link #initialize(Map)} is called.
      */
-    private Set<EvidenceIdentityProvider> identityProviders = null;
+    private Set<Class<? extends Evidence>> supportedEvidenceTypes = Set.of();
 
     /**
-     * Whether {@link DatawaveSecurityRealm#initializeProviders()} has ever been called.
+     * The configured identity providers. These are established the first time {@link #initializeProviders()} is called.
+     */
+    private Set<EvidenceIdentityProvider> identityProviders = Set.of();
+
+    /**
+     * Whether {@link #initializeProviders()} has ever been called.
      */
     private boolean providersInitialized = false;
+
+    /**
+     * Whether the required CDI beans have been successfully injected via {@link #injectBeans()}
+     */
+    private boolean beansInjected = false;
 
     /**
      * Set/inject the user service.
@@ -114,13 +127,25 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
      */
     public void initialize(Map<String,String> config) {
         if (log.isTraceEnabled()) {
-            log.trace("Initializing " + DatawaveSecurityRealm.class.getName() + " with config=" + config);
+            log.trace("initialize(), config=" + config);
         }
         // Parse the configuration properties.
         this.config = DatawaveSecurityRealmConfig.fromMap(config);
+
         // Set this to null to force the identity providers to be reinitialized the next time an authentication attempt occurs. Should not be at this point
         // since CDI beans may not be available for injection yet.
         this.providersInitialized = false;
+
+        // Determine the evidence types the realm should support.
+        Set<Class<? extends Evidence>> supportedEvidenceTypes = new HashSet<>();
+        supportedEvidenceTypes.add(ProxiedX509CertificateEvidence.class);
+        if (this.config.isJwtEnabled()) {
+            supportedEvidenceTypes.add(JWTEvidence.class);
+        }
+        if (this.config.isTrustedHeadersEnabled()) {
+            supportedEvidenceTypes.add(TrustedHeaderEvidence.class);
+        }
+        this.supportedEvidenceTypes = Set.copyOf(supportedEvidenceTypes);
     }
 
     /**
@@ -130,10 +155,13 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
     private void initializeProviders() {
         if (!providersInitialized) {
             if (log.isTraceEnabled()) {
-                log.trace("Initializing beans and providers for " + DatawaveSecurityRealm.class.getName());
+                log.trace("Initializing providers for " + DatawaveSecurityRealm.class.getName());
             }
+
+            // Ensure required CDI beans are injected.
             injectBeans();
 
+            // Create the providers.
             this.identityProviders = Set.copyOf(createProviders());
             if (log.isTraceEnabled()) {
                 log.trace("Identity Providers initialized for " + DatawaveSecurityRealm.class.getName() + ": "
@@ -148,15 +176,34 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
      * thrown.
      */
     private void injectBeans() {
-        log.trace("Injecting beans");
-        if (userService == null || sslContextInfo == null) {
-            BeanProvider.injectFields(this);
-        }
-        if (userService == null) {
-            throw new IllegalStateException("Failed to inject " + DatawaveUserService.class.getName());
-        }
-        if (sslContextInfo == null) {
-            throw new IllegalStateException("Failed to inject " + SSLContextInfo.class.getName());
+        log.trace("injectBeans()");
+        if (!beansInjected) {
+            if (userService == null || sslContextInfo == null) {
+                if (log.isTraceEnabled()) {
+                    log.trace(DatawaveUserService.class.getName() + " requires injection: " + (userService == null));
+                    log.trace(SSLContextInfo.class.getName() + " requires injection: " + (sslContextInfo == null));
+                }
+
+                try {
+                    BeanProvider.injectFields(this);
+                } catch (IllegalStateException e) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Bean provider failed to inject fields", e);
+                    }
+                    throw e;
+                }
+            }
+
+            // Verify that the user service is not null after injection.
+            if (userService == null) {
+                throw new IllegalStateException("Failed to inject " + DatawaveUserService.class.getName());
+            }
+            // Verify the ssl context is not null after injection.
+            if (sslContextInfo == null) {
+                throw new IllegalStateException("Failed to inject " + SSLContextInfo.class.getName());
+            }
+
+            beansInjected = true;
         }
     }
 
@@ -166,7 +213,7 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
      * {@link #getRealmIdentity(Evidence)}.
      */
     private Set<EvidenceIdentityProvider> createProviders() {
-        log.trace("Creating providers");
+        log.trace("createProviders()");
         Set<EvidenceIdentityProvider> providers = new HashSet<>();
 
         // If JWT authentication is enabled, create a JWT identity provider.
@@ -182,7 +229,7 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
         }
 
         // Always add an identity provider for X509 certs. SSL authentication is always enabled.
-        log.trace("Creating Proxed X509 Certificate identity provider");
+        log.trace("Creating Proxied X509 Certificate identity provider");
         providers.add(createProxiedX509IdentityProvider());
         return providers;
     }
@@ -196,10 +243,10 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
         try {
             // @formatter:off
             ObjectMapper mapper = JsonMapper.builder()
-                            .enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME)
-                            .build()
-                            .registerModules(new GuavaModule())
-                            .registerModules(new JaxbAnnotationModule());
+                    .enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME)
+                    .build()
+                    .registerModules(new GuavaModule())
+                    .registerModules(new JaxbAnnotationModule());
             // @formatter:on
             String alias = sslContextInfo.getKeyStore().aliases().nextElement();
             X509KeyManager keyManager = (X509KeyManager) sslContextInfo.getKeyManagers()[0];
@@ -242,6 +289,9 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
 
     @Override
     public void registerIdentityChangeListener(Consumer<Principal> listener) {
+        if (log.isTraceEnabled()) {
+            log.trace("registerIdentityChangeListener(), listener=" + listener);
+        }
         // Todo - implement this so that the user service can notify this realm about changes to the underlying storage.
     }
 
@@ -252,8 +302,12 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
      */
     @Override
     public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) {
+        if (log.isTraceEnabled()) {
+            log.trace("getCredentialAcquireSupport(), credentialType=" + credentialType + ", algorithmName=" + algorithmName + ", parameterSpec="
+                            + parameterSpec);
+        }
         Preconditions.checkNotNull(credentialType, "Parameter credentialType cannot be null");
-        return SupportLevel.UNSUPPORTED;
+        return SupportLevel.POSSIBLY_SUPPORTED;
     }
 
     /**
@@ -266,17 +320,17 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
     @Override
     public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName) {
         Preconditions.checkNotNull(evidenceType, "Parameter evidenceType may not be null");
-        // Ensure that identity providers have been initialized since the last call to initialize().
-        initializeProviders();
-        // @formatter:off
-        return this.identityProviders.stream().anyMatch(provider -> provider.canProvideIdentityFrom(evidenceType)) ?
-                        SupportLevel.SUPPORTED :
-                        SupportLevel.UNSUPPORTED;
-        // @formatter:on
+        if (log.isTraceEnabled()) {
+            log.trace("getEvidenceVerifySupport(), evidenceType=" + evidenceType.getName() + ", algorithmName=" + algorithmName);
+        }
+        return supportedEvidenceTypes.contains(evidenceType) ? SupportLevel.SUPPORTED : SupportLevel.POSSIBLY_SUPPORTED;
     }
 
     @Override
     public RealmIdentity getRealmIdentity(Evidence evidence) {
+        if (log.isTraceEnabled()) {
+            log.trace("getRealmIdentity(), evidence=" + evidence);
+        }
         // Ensure that identity providers have been initialized since the last call to initialize().
         initializeProviders();
         return new DatawaveRealmIdentity(this, evidence);

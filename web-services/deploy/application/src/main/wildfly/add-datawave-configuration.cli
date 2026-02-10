@@ -11,9 +11,6 @@ embed-server --server-config=standalone-full.xml
 # Add the MySQL Connector as a module
 module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.api,com.fasterxml.jackson.core.jackson-core --resources=mysql/mysql-connector-j-${version.mysql-connector}.jar
 
-# Add a module containing custom datawave elytron components.
-# module add --name=datawave.elytron --dependencies=org.apache.log4j,org.wildfly.security.elytron,org.wildfly.extension.elytron,com.fasterxml.jackson.core.jackson-core,com.fasterxml.jackson.core.jackson-databind,com.fasterxml.jackson.datatype.jackson-datatype-guava --resources=elytron/datawave-ws-security-${project.version}.jar
-
 # Change default ports to listen on all interfaces (can still override on command line)
 /interface=public/:write-attribute(name=inet-address,value="${jboss.bind.address:0.0.0.0}")
 /interface=management/:write-attribute(name=inet-address,value="${jboss.bind.address.management:0.0.0.0}")
@@ -214,13 +211,13 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 # Create a custom role decoder that will decode the roles a user has from a DatawavePrincipal.
 /subsystem=elytron/custom-role-decoder=datawaveRoleDecoder:add( \
     class-name=datawave.security.realm.RequiredRoleDecoder, \
-    module="datawave.security.elytron", \
+    module="datawave.security", \
     configuration={})
 
 # Create a custom realm that handles preparing the DatawavePrincipal for authentication.
 /subsystem=elytron/custom-realm=datawaveRealm:add( \
     class-name=datawave.security.realm.DatawaveSecurityRealm, \
-    module="datawave.security.elytron", \
+    module="datawave.security", \
     configuration={ \
         certVerifier="datawave.security.cert.DatawaveCertVerifier", \
         ocspLevel="off", \
@@ -257,7 +254,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 # Configure the authentication mechanism for Elytron.
 #
 /subsystem=elytron/service-loader-http-server-mechanism-factory=datawaveMechanismFactory:add( \
-    module=datawave.security.elytron)
+    module=datawave.security)
 /subsystem=elytron/http-authentication-factory=datawaveAuthenticationFactory:add( \
     http-server-mechanism-factory=datawaveMechanismFactory, \
     security-domain=datawaveElytron, \
@@ -330,6 +327,7 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 /subsystem=logging/periodic-rotating-file-handler=MODIFICATION_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"ModificationService.log"})
 /subsystem=logging/periodic-rotating-file-handler=DISTRIBUTED_QUERY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"DistributedQueryService.log"})
 /subsystem=logging/periodic-rotating-file-handler=RESTEASY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"RestEasy.log"})
+/subsystem=logging/periodic-rotating-file-handler=SPRING_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"Spring.log"})
 
 /subsystem=logging/logger=datawave.query:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.common.cache.SharedCacheCoordinator:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
@@ -362,6 +360,7 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 /subsystem=logging/logger=org.jboss.resteasy.plugins.server:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
 /subsystem=logging/logger=org.jboss.resteasy.specimpl:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
 /subsystem=logging/logger=datawave.resteasy.interceptor:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
+/subsystem=logging/logger=datawave.configuration.spring:add(use-parent-handlers=false,handlers=["SPRING_LOG"])
 
 # Custom log levels
 /subsystem=logging/logger=httpclient.wire:add(level=TRACE)

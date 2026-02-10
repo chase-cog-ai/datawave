@@ -6,7 +6,6 @@ import java.util.Objects;
 import javax.security.auth.callback.CallbackHandler;
 
 import org.apache.log4j.Logger;
-import org.wildfly.security.http.HttpConstants;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 

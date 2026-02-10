@@ -6,16 +6,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.security.Principal;
-import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.Set;
-
-import javax.security.auth.x500.X500Principal;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +23,6 @@ import datawave.security.SSLContextInfo;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUserService;
-import datawave.security.cert.DatawaveCertVerifier;
 import datawave.security.cert.X509CertificateVerifier;
 import datawave.security.util.DnUtils;
 
@@ -173,47 +168,6 @@ class ProxiedX509CertificateEvidenceIdentityProviderTest {
         Principal issuerPrincipal = mock(Principal.class);
         when(certificate.getIssuerDN()).thenReturn(issuerPrincipal);
         when(issuerPrincipal.getName()).thenReturn("cn=issuer, c=us, o=my org, ou=my dept");
-
-        String proxiedEntities = "cn=proxiedServer01, c=us, o=my org, ou=my dept<cn=proxiedServer01, c=us, o=my org, ou=my dept>";
-        String proxiedIssuers = "cn=proxiedIssuer01, c=us, o=my org, ou=my dept<cn=proxiedIssuer02, c=us, o=my org, ou=my dept>";
-
-        ProxiedX509CertificateEvidence evidence = new ProxiedX509CertificateEvidence(certificate, proxiedEntities, proxiedIssuers);
-
-        // Mock up the user service behavior.
-        Set<DatawaveUser> users = new HashSet<>();
-        users.add(mock(DatawaveUser.class));
-        when(userService.lookup(evidence.getEntities())).thenReturn(users);
-
-        // Obtain the identity for the evidence.
-        EvidenceIdentity identity = provider.getIdentity(evidence);
-
-        // Assert the identity.
-        assertThat(identity).isNotNull();
-        assertThat(identity.getAttributes()).isEqualTo(Attributes.EMPTY);
-        assertThat(identity.getUsers()).hasSize(1).containsAll(users);
-    }
-
-    /**
-     * Verify that {@link ProxiedX509CertificateEvidenceIdentityProvider#getIdentity(Evidence)} returns null evidence when the certificate verifier is an
-     * instance of {@link datawave.security.cert.DatawaveCertVerifier} that does not consider the issuer to be supported.
-     */
-    @Test
-    void testGetIdentityGivenIssuerNotSupported() throws AuthorizationException {
-        DatawaveCertVerifier certificateVerifier = mock(DatawaveCertVerifier.class);
-        provider = new ProxiedX509CertificateEvidenceIdentityProvider(userService, sslContextInfo, certificateVerifier);
-
-        // Mock up the certificate.
-        X509Certificate certificate = mock(X509Certificate.class);
-        Principal subjectPrincipal = mock(Principal.class);
-        when(certificate.getSubjectDN()).thenReturn(subjectPrincipal);
-        when(subjectPrincipal.getName()).thenReturn("cn=john q. doe, c=us, o=my org, ou=my dept");
-
-        Principal issuerPrincipal = mock(Principal.class);
-        when(certificate.getIssuerDN()).thenReturn(issuerPrincipal);
-        when(issuerPrincipal.getName()).thenReturn("cn=issuer, c=us, o=my org, ou=my dept");
-
-        X500Principal issuerX500Principal = mock(X500Principal.class);
-        when(certificate.getIssuerX500Principal()).thenReturn(issuerX500Principal);
 
         String proxiedEntities = "cn=proxiedServer01, c=us, o=my org, ou=my dept<cn=proxiedServer01, c=us, o=my org, ou=my dept>";
         String proxiedIssuers = "cn=proxiedIssuer01, c=us, o=my org, ou=my dept<cn=proxiedIssuer02, c=us, o=my org, ou=my dept>";
