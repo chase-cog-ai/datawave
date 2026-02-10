@@ -27,7 +27,7 @@ class JWTEvidenceIdentityProviderTest {
         assertThat(provider.canProvideIdentityFrom(TrustedHeaderEvidence.class)).isFalse();
         assertThat(provider.canProvideIdentityFrom(ProxiedX509CertificateEvidence.class)).isFalse();
     }
-    
+
     /**
      * Verify that {@link JWTEvidenceIdentityProvider#getIdentity(Evidence)} throws an exception when given null evidence.
      */
@@ -36,7 +36,7 @@ class JWTEvidenceIdentityProviderTest {
         JWTEvidenceIdentityProvider provider = new JWTEvidenceIdentityProvider(mock(JWTTokenHandler.class));
         assertThatThrownBy(() -> provider.getIdentity(null)).isInstanceOf(NullPointerException.class).hasMessageContaining("Evidence may not be null");
     }
-    
+
     /**
      * Verify that {@link JWTEvidenceIdentityProvider#getIdentity(Evidence)} throws an exception when given evidence that is not an instance of
      * {@link JWTEvidence}.
@@ -56,18 +56,18 @@ class JWTEvidenceIdentityProviderTest {
     void testGetIdentityGivenNullUsersReturned() {
         JWTTokenHandler tokenHandler = mock(JWTTokenHandler.class);
         JWTEvidenceIdentityProvider provider = new JWTEvidenceIdentityProvider(tokenHandler);
-        
+
         // Mock up the token handler behavior.
         when(tokenHandler.createUsersFromToken("token")).thenReturn(null);
-        
+
         // Obtain the identity for the evidence.
         JWTEvidence evidence = new JWTEvidence("token");
         EvidenceIdentity identity = provider.getIdentity(evidence);
-        
+
         // Assert the identity.
         assertThat(identity).isNull();
     }
-    
+
     /**
      * Verify that {@link JWTEvidenceIdentityProvider#getIdentity(Evidence)} returns null when the JWT token handler returns an empty collection of users.
      */
@@ -75,21 +75,21 @@ class JWTEvidenceIdentityProviderTest {
     void testGetIdentityGivenEmptyUsersReturned() {
         JWTTokenHandler tokenHandler = mock(JWTTokenHandler.class);
         JWTEvidenceIdentityProvider provider = new JWTEvidenceIdentityProvider(tokenHandler);
-        
+
         // Mock up the token handler behavior.
         when(tokenHandler.createUsersFromToken("token")).thenReturn(new HashSet<>());
-        
+
         // Obtain the identity for the evidence.
         JWTEvidence evidence = new JWTEvidence("token");
         EvidenceIdentity identity = provider.getIdentity(evidence);
-        
+
         // Assert the identity.
         assertThat(identity).isNull();
     }
-    
+
     /**
-     * Verify that {@link JWTEvidenceIdentityProvider#getIdentity(Evidence)} returns a non-null {@link EvidenceIdentity} when the JWT token handler returns
-     * a non-empty collection of users.
+     * Verify that {@link JWTEvidenceIdentityProvider#getIdentity(Evidence)} returns a non-null {@link EvidenceIdentity} when the JWT token handler returns a
+     * non-empty collection of users.
      */
     @Test
     void testGetIdentityGivenValidEvidence() {

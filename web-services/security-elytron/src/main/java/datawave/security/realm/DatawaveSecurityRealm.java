@@ -362,9 +362,10 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
                 throw new RealmUnavailableException("Error occurred when checking if identity exists", e);
             }
         }
-        
+
         /**
          * Load the identity if not already loaded and return it.
+         *
          * @return the identity, possibly null
          */
         private EvidenceIdentity getIdentity() throws Exception {
@@ -377,10 +378,10 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
                                 .orElse(null);
                 // @formatter:on
                 if (identityProvider != null) {
-                    if(log.isTraceEnabled()) {
+                    if (log.isTraceEnabled()) {
                         log.trace("Using identity provider " + identityProvider.getClass().getName());
                     }
-                    
+
                     this.identity = identityProvider.getIdentity(evidence);
                     if (this.identity != null) {
                         // Check if the user has a role that denies them access.
@@ -401,13 +402,13 @@ public class DatawaveSecurityRealm implements CacheableSecurityRealm {
                             // At this point the identity is considered valid. Load the attributes and the identity.
                             Attributes attributes = getAttributes(principal);
                             this.identity = new EvidenceIdentity(this.identity.getUsers(), attributes);
-                            if(log.isTraceEnabled()) {
+                            if (log.isTraceEnabled()) {
                                 log.trace("Loaded identity " + this.identity);
                             }
                         }
                     }
                 } else {
-                    if(log.isTraceEnabled()) {
+                    if (log.isTraceEnabled()) {
                         log.trace("No identity provider found for evidence of type " + evidence.getClass().getName());
                     }
                 }

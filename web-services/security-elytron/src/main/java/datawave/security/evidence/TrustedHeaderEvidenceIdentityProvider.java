@@ -3,7 +3,6 @@ package datawave.security.evidence;
 import java.util.Collection;
 
 import org.apache.log4j.Logger;
-
 import org.wildfly.security.evidence.Evidence;
 
 import com.google.common.base.Preconditions;
@@ -16,9 +15,9 @@ import datawave.security.authorization.DatawaveUserService;
  * {@link EvidenceIdentityProvider} implementation for trusted header authentication.
  */
 public class TrustedHeaderEvidenceIdentityProvider implements EvidenceIdentityProvider {
-    
+
     private static final Logger log = Logger.getLogger(TrustedHeaderEvidenceIdentityProvider.class);
-    
+
     private final DatawaveUserService userService;
 
     public TrustedHeaderEvidenceIdentityProvider(DatawaveUserService userService) {
@@ -38,10 +37,10 @@ public class TrustedHeaderEvidenceIdentityProvider implements EvidenceIdentityPr
         TrustedHeaderEvidence trustedHeaderEvidence = (TrustedHeaderEvidence) evidence;
 
         Collection<DatawaveUser> users = this.userService.lookup(trustedHeaderEvidence.getEntities());
-        if(users != null && !users.isEmpty()) {
+        if (users != null && !users.isEmpty()) {
             return new EvidenceIdentity(users);
         } else {
-            if(log.isTraceEnabled()) {
+            if (log.isTraceEnabled()) {
                 log.trace("User service returned no users for entities " + trustedHeaderEvidence.getEntities());
             }
             return null;

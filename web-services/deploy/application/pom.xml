@@ -24,6 +24,10 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
         </dependency>
@@ -610,6 +614,10 @@
                                         <artifactItem>
                                             <groupId>gov.nsa.datawave.core</groupId>
                                             <artifactId>common-utils</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>com.google.guava</groupId>
+                                            <artifactId>guava</artifactId>
                                         </artifactItem>
                                     </artifactItems>
                                 </configuration>

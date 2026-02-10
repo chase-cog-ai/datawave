@@ -8,6 +8,7 @@
         <resource-root path="authorization-api-${version.datawave.authorization-api}.jar"/>
         <resource-root path="jackson-datatype-guava-${version.jackson}.jar"/>
         <resource-root path="jackson-module-jaxb-annotations-${version.jackson}.jar"/>
+        <resource-root path="guava-${version.google-guava}.jar"/>
     </resources>
     <dependencies>
         <module name="org.apache.log4j"/>

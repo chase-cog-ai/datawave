@@ -3,7 +3,6 @@ package datawave.security.evidence;
 import java.util.Collection;
 
 import org.apache.log4j.Logger;
-
 import org.wildfly.security.evidence.Evidence;
 
 import com.google.common.base.Preconditions;
@@ -11,16 +10,13 @@ import com.google.common.base.Preconditions;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.JWTTokenHandler;
 
-
-import java.util.Collection;
-
 /**
  * {@link EvidenceIdentityProvider} implementation for JWT authentication.
  */
 public class JWTEvidenceIdentityProvider implements EvidenceIdentityProvider {
-    
+
     private static final Logger log = Logger.getLogger(JWTEvidenceIdentityProvider.class);
-    
+
     private final JWTTokenHandler jwtTokenHandler;
 
     public JWTEvidenceIdentityProvider(JWTTokenHandler jwtTokenHandler) {
@@ -40,10 +36,10 @@ public class JWTEvidenceIdentityProvider implements EvidenceIdentityProvider {
 
         JWTEvidence jwtEvidence = (JWTEvidence) evidence;
         Collection<DatawaveUser> users = jwtTokenHandler.createUsersFromToken(jwtEvidence.getToken());
-        if(users != null && !users.isEmpty()) {
+        if (users != null && !users.isEmpty()) {
             return new EvidenceIdentity(users);
         } else {
-            if(log.isTraceEnabled()) {
+            if (log.isTraceEnabled()) {
                 log.trace("No users found for jwt token " + jwtEvidence.getToken());
             }
             return null;

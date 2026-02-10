@@ -5,7 +5,6 @@ import java.security.cert.X509Certificate;
 import java.util.Collection;
 
 import org.apache.log4j.Logger;
-
 import org.wildfly.security.evidence.Evidence;
 
 import com.google.common.base.Preconditions;
@@ -21,9 +20,9 @@ import datawave.security.cert.X509CertificateVerifier;
  * {@link EvidenceIdentityProvider} implementation for SSL cert authentication.
  */
 public class ProxiedX509CertificateEvidenceIdentityProvider implements EvidenceIdentityProvider {
-    
+
     private static final Logger log = Logger.getLogger(ProxiedX509CertificateEvidenceIdentityProvider.class);
-    
+
     private final DatawaveUserService userService;
     private final SSLContextInfo sslContextInfo;
     private final X509CertificateVerifier certVerifier;
@@ -49,13 +48,13 @@ public class ProxiedX509CertificateEvidenceIdentityProvider implements EvidenceI
         // Validate the provided certificate.
         if (isValidCertificate(certificateEvidence.getCertificate())) {
             Collection<DatawaveUser> users = this.userService.lookup(certificateEvidence.getEntities());
-            if(users != null && !users.isEmpty()) {
+            if (users != null && !users.isEmpty()) {
                 return new EvidenceIdentity(users);
             } else {
                 log.trace("User service returned no users for certificate " + certificateEvidence.getCertificate());
             }
         } else {
-            if(log.isTraceEnabled()) {
+            if (log.isTraceEnabled()) {
                 log.trace("Certificate is not valid: " + certificateEvidence.getCertificate());
             }
         }
@@ -71,7 +70,7 @@ public class ProxiedX509CertificateEvidenceIdentityProvider implements EvidenceI
      * @return true if the certificate is valid, or false otherwise
      */
     private boolean isValidCertificate(X509Certificate certificate) {
-        if(certVerifier != null) {
+        if (certVerifier != null) {
             KeyStore keyStore = this.sslContextInfo.getKeyStore();
             KeyStore trustStore = this.sslContextInfo.getTrustStore();
             if (trustStore != null) {

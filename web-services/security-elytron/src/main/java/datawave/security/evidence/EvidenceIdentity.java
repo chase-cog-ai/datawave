@@ -44,7 +44,7 @@ public class EvidenceIdentity {
     public Attributes getAttributes() {
         return attributes;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -53,12 +53,12 @@ public class EvidenceIdentity {
         EvidenceIdentity identity = (EvidenceIdentity) o;
         return Objects.equals(users, identity.users) && Objects.equals(attributes, identity.attributes);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(users, attributes);
     }
-    
+
     @Override
     public String toString() {
         return new StringJoiner(", ", EvidenceIdentity.class.getSimpleName() + "[", "]").add("users=" + users).add("attributes=" + attributes).toString();
